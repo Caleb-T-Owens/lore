@@ -90,6 +90,10 @@ Prefer focused validation after each increment, but keep these end goals in mind
 - Search for `send slack notification` returns `lore-agent/slack-notify` at the top
 - Seed/demo data exists and is usable
 
+## Durable environment notes
+
+- In this workspace, Rails bootstrap required installing `ruby-full`, `libsqlite3-dev`, and `libyaml-dev` before `bundle install` would succeed.
+
 ## Ralph loop contract
 
 On each iteration:

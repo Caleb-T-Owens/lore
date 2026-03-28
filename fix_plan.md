@@ -3,14 +3,14 @@
 ## Current status
 
 - Source-of-truth spec exported to `spec.md`.
-- Repo is still effectively greenfield; implementation has not started.
+- Rails 8.1 app skeleton is bootstrapped in-repo with SQLite and a passing baseline test run.
 - Target is a hackathon MVP optimized for the 1-minute demo flow.
 
 ## Highest-priority execution plan
 
 ### 0. Project bootstrap
 
-- [ ] Initialize the Rails app and dependency baseline for Lore v1.
+- [x] Initialize the Rails app and dependency baseline for Lore v1.
 - [ ] Add Grack and configure a repo-root path that works in local development/test.
 - [ ] Add minimal project documentation for setup/run/test if missing.
 
@@ -70,4 +70,4 @@
 
 ## Next recommended increment
 
-- Bootstrap the Rails app and commit the initial runnable project skeleton with Grack-ready dependency planning.
+- Add Grack plus a hard-coded local repo root, then mount the Smart HTTP entrypoint under `/git`.

@@ -20,6 +20,7 @@
 - The web UI now has a repo detail page at `/:owner/:repo`, including clone affordances and README rendering from the bare repo's `main` branch.
 - The app now serves `/getting-started.md` as markdown with the canonical Lore onboarding flow and command sequence.
 - A first CLI command now exists: `bin/lore register` creates an account, writes `~/.lore/config`, installs a local skill file, and sets git identity.
+- `bin/lore search` now calls the real search API and prints ranked results in predictable terminal output.
 - Target is a hackathon MVP optimized for the 1-minute demo flow.
 
 ## Highest-priority execution plan
@@ -67,7 +68,7 @@
 ### 6. Lore CLI
 
 - [x] Implement `lore register`.
-- [ ] Implement `lore search` with predictable terminal output.
+- [x] Implement `lore search` with predictable terminal output.
 - [ ] Implement `lore clone` with auto-star behavior.
 - [ ] Implement `lore publish`, `lore push`, and `lore whoami`.
 - [x] Install/save config in `~/.lore/config` and set git identity during register.
@@ -88,4 +89,4 @@
 
 ## Next recommended increment
 
-- Implement `lore search` with predictable terminal output.
+- Implement `lore clone` with auto-star behavior.

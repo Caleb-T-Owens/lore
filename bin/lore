@@ -12,6 +12,7 @@ Lore CLI
 
 Usage:
   lore register <username>
+  lore search <query>
 EOF
 }
 
@@ -33,10 +34,26 @@ json_value() {
 api_post() {
   local url="$1"
   local payload="$2"
+  api_request POST "$url" "$payload"
+}
+
+api_get() {
+  local url="$1"
+  api_request GET "$url" ""
+}
+
+api_request() {
+  local method="$1"
+  local url="$2"
+  local payload="$3"
   local body_file
   body_file=$(mktemp)
   local status
-  status=$(curl -sS -o "$body_file" -w "%{http_code}" -X POST "$url" -H "Content-Type: application/json" -d "$payload")
+  if [[ "$method" == "GET" ]]; then
+    status=$(curl -sS -o "$body_file" -w "%{http_code}" -X "$method" "$url")
+  else
+    status=$(curl -sS -o "$body_file" -w "%{http_code}" -X "$method" "$url" -H "Content-Type: application/json" -d "$payload")
+  fi
 
   if [[ "$status" != 2* ]]; then
     printf 'Lore API request failed (%s):\n' "$status" >&2
@@ -47,6 +64,22 @@ api_post() {
 
   cat "$body_file"
   rm -f "$body_file"
+}
+
+load_config() {
+  if [[ -f "$LORE_CONFIG_PATH" ]]; then
+    # shellcheck disable=SC1090
+    source "$LORE_CONFIG_PATH"
+  fi
+}
+
+active_host() {
+  load_config
+  printf '%s' "${LORE_HOST:-$LORE_HOST_DEFAULT}"
+}
+
+urlencode() {
+  ruby -ruri -e 'print URI.encode_www_form_component(ARGV.join(" "))' "$@"
 }
 
 write_config() {
@@ -111,12 +144,47 @@ register() {
   printf 'Installed skill to %s\n' "$LORE_SKILL_PATH"
 }
 
+search() {
+  if [[ "$#" -eq 0 ]]; then
+    usage >&2
+    exit 1
+  fi
+
+  local query="$*"
+  local encoded_query
+  encoded_query=$(urlencode "$query")
+  local response
+  response=$(api_get "$(active_host)/api/repos/search?q=$encoded_query")
+
+  QUERY="$query" RESPONSE="$response" ruby -rjson <<'EOF'
+payload = JSON.parse(ENV.fetch("RESPONSE"))
+repos = payload.fetch("repos")
+
+if repos.empty?
+  puts "No repos found for: #{ENV.fetch("QUERY")}" 
+  exit 0
+end
+
+repos.each_with_index do |repo, index|
+  owner = repo.fetch("owner")
+  name = repo.fetch("name")
+  stars = repo.fetch("stars")
+  description = repo.fetch("description")
+  puts "#{index + 1}. #{owner}/#{name} (#{stars} stars) - #{description}"
+end
+EOF
+}
+
 main() {
   local command="${1:-}"
   case "$command" in
     register)
       shift
       register "$@"
+      ;;
+    search)
+      shift
+      search "$@"
       ;;
     ""|-h|--help|help)
       usage

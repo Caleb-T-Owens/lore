@@ -383,11 +383,105 @@ button {
   padding-top: 18px;
 }
 
+.repo-shell h1 {
+  margin: 0;
+  font-family: var(--display-font);
+  font-size: clamp(2.5rem, 6vw, 4.4rem);
+  line-height: 0.95;
+}
+
+.repo-header {
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+}
+
+.clone-panel,
+.readme-card,
+.command-block {
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.56);
+}
+
+.clone-panel {
+  width: min(100%, 430px);
+  padding: 18px;
+}
+
+.clone-copy-row {
+  display: flex;
+  gap: 10px;
+  margin: 10px 0 0;
+}
+
+.clone-copy-row input {
+  flex: 1;
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid rgba(31, 29, 26, 0.14);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.clone-copy-row button {
+  min-width: 92px;
+}
+
+.clone-note {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.repo-stat-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.repo-stat-list div {
+  padding: 12px;
+  border-radius: 16px;
+  background: rgba(127, 52, 20, 0.07);
+}
+
+.repo-stat-list dt {
+  color: var(--muted);
+}
+
+.repo-stat-list dd {
+  margin: 8px 0 0;
+}
+
+.usage-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.command-block,
+.readme-card pre {
+  margin: 12px 0 0;
+  padding: 16px;
+  overflow-x: auto;
+  font-family: var(--mono-font);
+  white-space: pre-wrap;
+}
+
+.readme-card pre {
+  margin: 0;
+  line-height: 1.6;
+}
+
 @media (max-width: 860px) {
   .hero-copy,
   .section-heading,
   .search-row,
-  .owner-header {
+  .owner-header,
+  .repo-header,
+  .clone-copy-row {
     flex-direction: column;
   }
 
@@ -397,7 +491,9 @@ button {
 
   .loop-grid,
   .repo-grid,
-  .stat-strip {
+  .stat-strip,
+  .usage-grid,
+  .repo-stat-list {
     grid-template-columns: 1fr;
   }
 

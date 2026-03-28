@@ -1,0 +1,76 @@
+<% content_for :title, "#{@repo.owner.username}/#{@repo.name} | Lore" %>
+
+<main class="home-shell repo-shell">
+  <section class="hero-panel repo-header">
+    <div>
+      <p class="eyebrow">Repository</p>
+      <h1><%= @repo.owner.username %>/<%= @repo.name %></h1>
+      <p class="hero-lead"><%= @repo.description %></p>
+
+      <div class="repo-tags">
+        <% @repo.tags.each do |tag| %>
+          <span><%= tag %></span>
+        <% end %>
+      </div>
+    </div>
+
+    <div class="clone-panel">
+      <p class="section-label">Clone over HTTPS</p>
+      <div class="clone-copy-row">
+        <input type="text" value="<%= @repo.clone_url %>" readonly aria-label="Clone URL">
+        <button type="button" onclick="navigator.clipboard.writeText(this.previousElementSibling.value)">Copy</button>
+      </div>
+      <p class="clone-note">Any authenticated Lore account may push to <code>main</code>. Anonymous users can clone and fetch.</p>
+      <dl class="repo-stat-list">
+        <div>
+          <dt>Stars</dt>
+          <dd><%= @repo.stars_count %></dd>
+        </div>
+        <div>
+          <dt>Last pushed</dt>
+          <dd><%= repo_push_label(@repo) %></dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="repos-panel repo-usage-panel">
+    <div class="section-heading">
+      <div>
+        <p class="section-label">Quick start</p>
+        <h2>Use the repo from Lore or plain git</h2>
+      </div>
+      <p>The clone URL is canonical across the API, CLI, and web UI.</p>
+    </div>
+
+    <div class="usage-grid">
+      <article class="repo-card owner-result-card">
+        <p class="repo-slug">Lore CLI</p>
+        <pre class="command-block"><code>lore clone <%= @repo.owner.username %>/<%= @repo.name %></code></pre>
+      </article>
+      <article class="repo-card owner-result-card">
+        <p class="repo-slug">Git</p>
+        <pre class="command-block"><code>git clone <%= @repo.clone_url %></code></pre>
+      </article>
+    </div>
+  </section>
+
+  <section class="repos-panel repo-readme-panel">
+    <div class="section-heading">
+      <div>
+        <p class="section-label">Agent README</p>
+        <h2><%= @readme.present? ? "What this repo does" : "README not pushed yet" %></h2>
+      </div>
+      <p>Agent-readable docs should make it obvious what the tool does, what it needs, and how to invoke it.</p>
+    </div>
+
+    <% if @readme.present? %>
+      <article class="readme-card"><pre><%= @readme %></pre></article>
+    <% else %>
+      <div class="empty-state search-message">
+        <h3>No README on <code>main</code> yet.</h3>
+        <p>Push an agent-readable README so the next agent can evaluate the tool in seconds.</p>
+      </div>
+    <% end %>
+  </section>
+</main>

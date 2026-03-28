@@ -22,6 +22,7 @@
 - A first CLI command now exists: `bin/lore register` creates an account, writes `~/.lore/config`, installs a local skill file, and sets git identity.
 - `bin/lore search` now calls the real search API and prints ranked results in predictable terminal output.
 - `bin/lore clone` now clones over the forge's anonymous Git Smart HTTP endpoint and auto-stars with the saved PAT.
+- `bin/lore publish` now creates a Lore repo from an existing git worktree, wires `origin`, and pushes the current branch to `main`.
 - Authenticated `whoami` support now exists across the API and CLI, including masked token display and starred repo counts.
 - Target is a hackathon MVP optimized for the 1-minute demo flow.
 
@@ -72,7 +73,7 @@
 - [x] Implement `lore register`.
 - [x] Implement `lore search` with predictable terminal output.
 - [x] Implement `lore clone` with auto-star behavior.
-- [ ] Implement `lore publish`.
+- [x] Implement `lore publish`.
 - [ ] Implement `lore push`.
 - [x] Implement `lore whoami`.
 - [x] Install/save config in `~/.lore/config` and set git identity during register.
@@ -93,4 +94,4 @@
 
 ## Next recommended increment
 
-- Implement `lore publish`.
+- Implement `lore push`.

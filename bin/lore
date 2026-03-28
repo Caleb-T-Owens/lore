@@ -14,13 +14,20 @@ Usage:
   lore register <username>
   lore search <query>
   lore clone <owner/repo> [path]
+  lore publish [path] [--description TEXT] [--tags tag1,tag2]
   lore whoami
 EOF
 }
 
 json_payload() {
-  local username="$1"
-  ruby -rjson -e 'print JSON.generate(username: ARGV.fetch(0))' "$username"
+  ruby -rjson -e '
+    payload = {}
+    ARGV.each do |pair|
+      key, value = pair.split("=", 2)
+      payload[key] = value&.start_with?("[") ? JSON.parse(value) : value
+    end
+    print JSON.generate(payload)
+  ' "$@"
 }
 
 json_value() {
@@ -107,6 +114,11 @@ active_token() {
   printf '%s' "${LORE_TOKEN:-}"
 }
 
+active_username() {
+  load_config
+  printf '%s' "${LORE_USERNAME:-}"
+}
+
 mask_token() {
   local token="$1"
   if [[ ${#token} -le 12 ]]; then
@@ -167,7 +179,7 @@ register() {
   fi
 
   local response
-  response=$(api_post "$LORE_HOST_DEFAULT/api/users" "$(json_payload "$username")")
+  response=$(api_post "$LORE_HOST_DEFAULT/api/users" "$(json_payload "username=$username")")
   local created_username
   created_username=$(json_value "$response" user username)
   local token
@@ -242,6 +254,118 @@ clone_repo() {
   fi
 }
 
+authenticated_remote_url() {
+  local username="$1"
+  local token="$2"
+  local clone_url="$3"
+
+  ruby -ruri -e '
+    uri = URI(ARGV.fetch(2))
+    uri.user = ARGV.fetch(0)
+    uri.password = ARGV.fetch(1)
+    print uri.to_s
+  ' "$username" "$token" "$clone_url"
+}
+
+publish() {
+  local target_path="."
+  local description=""
+  local tags_csv=""
+
+  while [[ "$#" -gt 0 ]]; do
+    case "$1" in
+      --description)
+        shift
+        description="${1:-}"
+        ;;
+      --tags)
+        shift
+        tags_csv="${1:-}"
+        ;;
+      --help|-h)
+        usage
+        exit 0
+        ;;
+      *)
+        target_path="$1"
+        ;;
+    esac
+    shift || true
+  done
+
+  local token
+  token="$(active_token)"
+  local username
+  username="$(active_username)"
+  local host
+  host="$(active_host)"
+
+  if [[ -z "$token" || -z "$username" ]]; then
+    printf 'Lore config is missing LORE_TOKEN or LORE_USERNAME in %s\n' "$LORE_CONFIG_PATH" >&2
+    exit 1
+  fi
+
+  if [[ ! -d "$target_path/.git" ]]; then
+    printf 'Not a git repository: %s\n' "$target_path" >&2
+    exit 1
+  fi
+
+  if ! git -C "$target_path" rev-parse --verify HEAD >/dev/null 2>&1; then
+    printf 'Publish requires at least one local commit in %s\n' "$target_path" >&2
+    exit 1
+  fi
+
+  local repo_name
+  repo_name="$(basename "$(realpath "$target_path")")"
+
+  if [[ -z "$description" ]]; then
+    if [[ -t 0 ]]; then
+      printf 'Description: '
+      IFS= read -r description
+    else
+      printf 'Publish requires --description when stdin is not interactive\n' >&2
+      exit 1
+    fi
+  fi
+
+  if [[ -z "$tags_csv" && -t 0 ]]; then
+    printf 'Tags (comma-separated, optional): '
+    IFS= read -r tags_csv
+  fi
+
+  local normalized_tags
+  normalized_tags=$(ruby -rjson -e '
+    tags = ARGV.fetch(0, "").split(",").map { |tag| tag.strip.downcase }.reject(&:empty?).uniq
+    print JSON.generate(tags)
+  ' "$tags_csv")
+
+  local payload
+  payload=$(json_payload "name=$repo_name" "description=$description" "tags=$normalized_tags")
+  local response
+  response=$(api_post_with_token "$host/api/repos" "$payload" "$token")
+
+  local owner
+  owner=$(json_value "$response" repo owner)
+  local name
+  name=$(json_value "$response" repo name)
+  local clone_url
+  clone_url=$(json_value "$response" repo clone_url)
+  local push_url
+  push_url=$(authenticated_remote_url "$username" "$token" "$clone_url")
+
+  if git -C "$target_path" remote get-url origin >/dev/null 2>&1; then
+    printf 'origin already exists in %s\n' "$target_path" >&2
+    exit 1
+  fi
+
+  git -C "$target_path" remote add origin "$push_url"
+  printf 'Created repo %s/%s\n' "$owner" "$name"
+  printf 'Added origin %s\n' "$clone_url"
+
+  git -C "$target_path" push -u origin HEAD:main
+  printf 'Pushed main to %s/%s\n' "$owner" "$name"
+}
+
 whoami() {
   local token
   token="$(active_token)"
@@ -281,6 +405,10 @@ main() {
     clone)
       shift
       clone_repo "$@"
+      ;;
+    publish)
+      shift
+      publish "$@"
       ;;
     whoami)
       shift

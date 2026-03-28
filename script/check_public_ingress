@@ -29,15 +29,78 @@ print_blocker() {
   status=1
 }
 
+print_hint() {
+  local label="$1"
+  local detail="$2"
+  printf '[hint] %s: %s\n' "$label" "$detail"
+}
+
+join_csv() {
+  ruby -e 'puts STDIN.read.split.join(", ")'
+}
+
+filter_preferred_ipv4s() {
+  ruby -ripaddr -e '
+    blocked = %w[
+      0.0.0.0/8
+      10.0.0.0/8
+      100.64.0.0/10
+      127.0.0.0/8
+      169.254.0.0/16
+      172.16.0.0/12
+      192.168.0.0/16
+      224.0.0.0/4
+    ].map { |cidr| IPAddr.new(cidr) }
+    ips = STDIN.read.split.grep(/\A\d+\.\d+\.\d+\.\d+\z/).uniq
+    preferred = ips.reject { |ip| blocked.any? { |range| range.include?(ip) } }
+    puts((preferred.empty? ? ips : preferred))
+  '
+}
+
+resolve_ipv4s() {
+  if command -v getent >/dev/null 2>&1; then
+    if getent_output="$(getent ahostsv4 "$PUBLIC_HOST" 2>/dev/null)"; then
+      printf '%s\n' "$getent_output" | ruby -e 'puts STDIN.read.lines.map { |line| line.split.first }.grep(/\A\d+\.\d+\.\d+\.\d+\z/).uniq'
+      return
+    fi
+  fi
+
+  ruby -rresolv -e 'puts Resolv.getaddresses(ARGV.fetch(0)).grep(/\A\d+\.\d+\.\d+\.\d+\z/).uniq' "$PUBLIC_HOST" 2>/dev/null || true
+}
+
+local_ipv4_candidates() {
+  if command -v ip >/dev/null 2>&1; then
+    if ip_output="$(ip -4 -o addr show scope global 2>/dev/null)" && [[ -n "$ip_output" ]]; then
+      printf '%s\n' "$ip_output" | ruby -e 'puts STDIN.read.lines.map { |line| line.split[3].to_s.split("/").first }.grep(/\A\d+\.\d+\.\d+\.\d+\z/).reject { |ip| ip.start_with?("127.") }.uniq' | filter_preferred_ipv4s
+      return
+    fi
+  fi
+
+  if command -v hostname >/dev/null 2>&1; then
+    hostname -I 2>/dev/null | ruby -e 'puts STDIN.read.split.grep(/\A\d+\.\d+\.\d+\.\d+\z/).reject { |ip| ip.start_with?("127.") }.uniq' | filter_preferred_ipv4s || true
+  fi
+}
+
 resolved_ips=""
-if getent_output="$(getent ahostsv4 "$PUBLIC_HOST" 2>/dev/null)"; then
-  resolved_ips="$(printf '%s\n' "$getent_output" | ruby -e 'puts STDIN.read.lines.map { |line| line.split.first }.uniq')"
-fi
+resolved_ips="$(resolve_ipv4s)"
+candidate_ips="$(local_ipv4_candidates)"
 
 if [[ -z "$resolved_ips" ]]; then
   print_blocker dns "$PUBLIC_HOST does not resolve yet"
+
+  if [[ -n "$candidate_ips" ]]; then
+    joined_candidates="$(printf '%s' "$candidate_ips" | join_csv)"
+    print_hint dns-target "point $PUBLIC_HOST at $joined_candidates"
+
+    if [[ -z "$EXPECTED_IP" ]]; then
+      first_candidate="$(printf '%s\n' "$candidate_ips" | ruby -e 'puts STDIN.read.lines.first.to_s.strip')"
+      if [[ -n "$first_candidate" ]]; then
+        print_hint expected-ip "rerun with EXPECTED_IP=$first_candidate to assert the final DNS target"
+      fi
+    fi
+  fi
 else
-  joined_ips="$(printf '%s' "$resolved_ips" | ruby -e 'puts STDIN.read.split.join(", ")')"
+  joined_ips="$(printf '%s' "$resolved_ips" | join_csv)"
   print_ok dns "$PUBLIC_HOST resolves to $joined_ips"
 
   if [[ -n "$EXPECTED_IP" ]]; then
@@ -46,6 +109,9 @@ else
     else
       print_blocker dns-target "expected IP $EXPECTED_IP is missing from $joined_ips"
     fi
+  elif [[ -n "$candidate_ips" ]]; then
+    joined_candidates="$(printf '%s' "$candidate_ips" | join_csv)"
+    print_hint expected-ip "rerun with EXPECTED_IP=<one of $joined_candidates> to assert the cutover target"
   fi
 fi
 

@@ -452,7 +452,13 @@ push_repo() {
   git -C "$target_path" remote set-url --push origin "$push_url"
 
   printf 'Rebasing %s onto origin/main\n' "$target_path"
-  git -C "$target_path" pull --rebase origin main
+  if ! git -C "$target_path" pull --rebase origin main; then
+    cat <<'EOF' >&2
+Rebase failed while syncing with origin/main.
+Resolve conflicts, run `git rebase --continue` (or `git rebase --abort`), then rerun `lore push`.
+EOF
+    exit 1
+  fi
   printf 'Pushing %s to main\n' "$target_path"
   git -C "$target_path" push origin HEAD:main
 }

@@ -68,6 +68,57 @@ class LoreCliPushTest < ActiveSupport::TestCase
     end
   end
 
+  test "push prints conflict guidance when rebase fails" do
+    owner = User.create!(username: "hazel")
+    contributor = User.create!(username: "agent")
+    repo = Lore::RepoProvisioner.create(
+      owner: owner,
+      params: {
+        name: "slack-notify",
+        description: "Posts to Slack",
+        tags: ["slack"]
+      }
+    )
+    seed_repo(repo.path, "README.md" => "# Slack Notify\noriginal\n")
+
+    with_lore_test_server(log_name: "lore-cli-push-server.log") do |base_url|
+      Dir.mktmpdir("lore-cli-home") do |home|
+        Dir.mktmpdir("lore-cli-push") do |dir|
+          primary_clone = File.join(dir, "primary")
+          remote_clone = File.join(dir, "remote")
+          public_remote = "#{base_url}/git/hazel/slack-notify.git"
+          push_remote = "#{base_url.sub('http://', "http://#{contributor.username}:#{contributor.plain_pat}@")}/git/hazel/slack-notify.git"
+
+          write_lore_cli_config(home, base_url, contributor)
+
+          run_command!("git", "clone", public_remote, primary_clone)
+          configure_git_identity!(primary_clone)
+          File.write(File.join(primary_clone, "README.md"), "# Slack Notify\nlocal edit\n")
+          run_command!("git", "-C", primary_clone, "add", "README.md")
+          run_command!("git", "-C", primary_clone, "commit", "-m", "Local README edit")
+
+          run_command!("git", "clone", public_remote, remote_clone)
+          configure_git_identity!(remote_clone)
+          File.write(File.join(remote_clone, "README.md"), "# Slack Notify\nremote edit\n")
+          run_command!("git", "-C", remote_clone, "add", "README.md")
+          run_command!("git", "-C", remote_clone, "commit", "-m", "Remote README edit")
+          run_command!("git", "-C", remote_clone, "push", push_remote, "HEAD:main")
+
+          stdout, stderr, status = Open3.capture3(
+            { "HOME" => home },
+            "bash", Rails.root.join("bin", "lore").to_s, "push", primary_clone
+          )
+
+          assert_not status.success?
+          assert_includes stdout, "Rebasing #{primary_clone} onto origin/main"
+          refute_includes stdout, "Pushing #{primary_clone} to main"
+          assert_includes stderr, "Rebase failed while syncing with origin/main."
+          assert_includes stderr, "git rebase --continue"
+        end
+      end
+    end
+  end
+
   private
 
   def seed_repo(repo_path, files)

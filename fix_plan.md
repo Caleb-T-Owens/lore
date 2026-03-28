@@ -25,6 +25,7 @@
 - `bin/lore clone` now treats auto-starring as best-effort, so a stale PAT cannot derail an otherwise successful demo clone.
 - `bin/lore publish` now creates a Lore repo from an existing git worktree, wires `origin`, and pushes the current branch to `main`.
 - `bin/lore push` now rebases cloned worktrees onto `origin/main`, sets an authenticated push URL, and pushes back to Lore.
+- `bin/lore push` now prints a concise recovery hint when rebase fails, improving agent ergonomics for non-fast-forward/conflict recovery during the demo loop.
 - Authenticated `whoami` support now exists across the API and CLI, including masked token display and starred repo counts.
 - `bin/lore star` now exists as a first-class CLI command for explicit starring without cloning, aligned with the API star flow and Lore skill behavior.
 - CLI API failures now surface concise validation messages instead of raw JSON payload dumps, with focused coverage for duplicate register/publish flows.
@@ -111,7 +112,7 @@
 ### 8. Implementation refinement (demo-critical)
 
 - [x] Implement `lore star <owner/repo>` as an explicit CLI command with focused integration coverage for success and missing-token UX.
-- [ ] Tighten CLI push UX so non-fast-forward/rebase conflicts surface a short actionable hint for the demo path.
+- [x] Tighten CLI push UX so non-fast-forward/rebase conflicts surface a short actionable hint for the demo path.
 - [ ] Add focused integration coverage for explicit star behavior in a demo-like loop to reduce regression risk in repo/search/star flows.
 
 ### 9. Deployment + public ingress (deprioritized)
@@ -128,4 +129,4 @@
 
 ## Next recommended increment
 
-- Tighten `bin/lore push` conflict ergonomics: keep existing behavior, but print a concise, actionable hint when `git pull --rebase origin main` fails so agents can recover quickly during the demo loop.
+- Add focused integration coverage for explicit star behavior in a demo-like loop to reduce regression risk across search/clone/star/push metadata surfaces.

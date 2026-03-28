@@ -37,6 +37,7 @@ class ApiReposTest < ActionDispatch::IntegrationTest
     assert_equal repo.created_at.iso8601, payload.fetch("created_at")
     assert_equal File.join(@repo_root, "hazel", "slack-notify.git"), repo.path
     assert Dir.exist?(repo.path)
+    assert File.executable?(File.join(repo.path, "hooks", "post-receive"))
     assert_equal "refs/heads/main", `git --git-dir="#{repo.path}" symbolic-ref HEAD`.strip
   end
 

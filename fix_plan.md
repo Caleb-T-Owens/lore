@@ -9,6 +9,7 @@
 - Shared bearer-token and basic-auth helpers now resolve users from PATs for both the future API and Git middleware.
 - `POST /api/users` now creates accounts, returns the one-time plaintext PAT, and covers the registration path with focused integration tests.
 - `POST /api/repos` now requires bearer auth, creates bare repos on disk with `HEAD` on `main`, and returns canonical URLs from the create response.
+- Real Git transport is now covered with end-to-end validation for anonymous clone/fetch, authenticated push, non-fast-forward rejection, and `last_pushed_at` updates.
 - Target is a hackathon MVP optimized for the 1-minute demo flow.
 
 ## Highest-priority execution plan
@@ -30,13 +31,13 @@
 
 - [x] Implement repo creation API that validates owner/name, creates the DB row, initializes a bare repo on disk, and points `HEAD` at `main`.
 - [ ] Return canonical `web_url` and `clone_url` values from repo read APIs.
-- [ ] Update repo metadata on successful pushes, including `last_pushed_at`.
+- [x] Update repo metadata on successful pushes, including `last_pushed_at`.
 
 ### 3. Git Smart HTTP
 
 - [x] Mount Grack under `/git`.
 - [x] Add middleware that resolves repo access from the request path and enforces Lore v1 rules.
-- [ ] Validate anonymous clone/fetch, authenticated push, and non-fast-forward rejection to `main`.
+- [x] Validate anonymous clone/fetch, authenticated push, and non-fast-forward rejection to `main`.
 
 ### 4. Search + stars
 
@@ -77,4 +78,4 @@
 
 ## Next recommended increment
 
-- Validate real git push behavior end-to-end: anonymous fetch, authenticated push, and non-fast-forward rejection on `main`.
+- Add repo read APIs for public metadata (`GET /api/repos/:owner/:name` and `GET /api/users/:username/repos`).

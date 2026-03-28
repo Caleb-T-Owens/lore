@@ -14,6 +14,7 @@ module Lore
         Repo.transaction do
           repo.save!
           initialize_bare_repo!(repo.path)
+          Lore::RepoHooks.install!(repo.path)
         end
 
         repo

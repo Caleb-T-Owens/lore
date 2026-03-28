@@ -28,6 +28,7 @@ module Lore
     # not contain `.rb` files, or that should not be reloaded or eager loaded.
     # Common ones are `templates`, `generators`, or `middleware`, for example.
     config.autoload_lib(ignore: %w[assets tasks])
+    config.x.lore.host = ENV.fetch("LORE_HOST", "https://lore.cto.je")
     config.x.lore.repo_root = Rails.root.join("tmp", "lore-repos").to_s
     config.after_initialize do
       FileUtils.mkdir_p(config.x.lore.repo_root)

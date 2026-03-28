@@ -8,6 +8,7 @@
 - Core `User`, `Repo`, and `Star` models now exist with SQLite constraints, validations, and PAT digest issuance at user creation.
 - Shared bearer-token and basic-auth helpers now resolve users from PATs for both the future API and Git middleware.
 - `POST /api/users` now creates accounts, returns the one-time plaintext PAT, and covers the registration path with focused integration tests.
+- `POST /api/repos` now requires bearer auth, creates bare repos on disk with `HEAD` on `main`, and returns canonical URLs from the create response.
 - Target is a hackathon MVP optimized for the 1-minute demo flow.
 
 ## Highest-priority execution plan
@@ -27,8 +28,8 @@
 
 ### 2. Repo creation + storage
 
-- [ ] Implement repo creation API that validates owner/name, creates the DB row, initializes a bare repo on disk, and points `HEAD` at `main`.
-- [ ] Return canonical `web_url` and `clone_url` values from repo creation/read APIs.
+- [x] Implement repo creation API that validates owner/name, creates the DB row, initializes a bare repo on disk, and points `HEAD` at `main`.
+- [ ] Return canonical `web_url` and `clone_url` values from repo read APIs.
 - [ ] Update repo metadata on successful pushes, including `last_pushed_at`.
 
 ### 3. Git Smart HTTP
@@ -75,4 +76,4 @@
 
 ## Next recommended increment
 
-- Build `POST /api/repos` so authenticated users can create bare repos with canonical clone/web URLs.
+- Add Lore's git auth middleware so clone stays anonymous while push requires valid Basic auth.

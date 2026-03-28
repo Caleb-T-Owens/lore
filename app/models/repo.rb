@@ -13,6 +13,22 @@ class Repo < ApplicationRecord
   validates :path, presence: true, uniqueness: true
   validate :path_is_absolute
 
+  def clone_url
+    "#{Lore::Application.config.x.lore.host}/git/#{owner.username}/#{name}.git"
+  end
+
+  def web_url
+    "#{Lore::Application.config.x.lore.host}/#{owner.username}/#{name}"
+  end
+
+  def stars_count
+    if association(:stars).loaded?
+      stars.size
+    else
+      stars.count
+    end
+  end
+
   def tags
     read_json_array_attribute(:tags)
   end

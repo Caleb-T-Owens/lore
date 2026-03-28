@@ -27,6 +27,7 @@
 - Authenticated `whoami` support now exists across the API and CLI, including masked token display and starred repo counts.
 - `db/seeds.rb` now provisions the five demo repos with real commits, agent-readable READMEs, realistic stars, and recent push timestamps.
 - Search validation now covers the seeded demo queries, with `slack-notify` ranking first for the Slack-oriented prompts.
+- `/install.sh` now serves a real shell installer that writes the Lore CLI into `~/.local/bin` for onboarding.
 - Target is a hackathon MVP optimized for the 1-minute demo flow.
 
 ## Highest-priority execution plan
@@ -80,7 +81,7 @@
 - [x] Implement `lore push`.
 - [x] Implement `lore whoami`.
 - [x] Install/save config in `~/.lore/config` and set git identity during register.
-- [ ] Serve a real `install.sh` so getting-started can install the CLI non-interactively.
+- [x] Serve a real `install.sh` so getting-started can install the CLI non-interactively.
 
 ### 7. Demo fixtures + end-to-end validation
 
@@ -98,4 +99,4 @@
 
 ## Next recommended increment
 
-- Serve a real `install.sh` endpoint for the onboarding flow.
+- Add a demo-critical end-to-end validation path covering register/create/clone/push/metadata refresh.

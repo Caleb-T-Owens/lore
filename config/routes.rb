@@ -2,6 +2,7 @@ Rails.application.routes.draw do
   root "home#index"
   get "home", to: redirect("/")
   get "search", to: "search#index", as: :search
+  get "install.sh", to: "install_scripts#show", as: :install_script
   get "getting-started.md", to: "getting_started#show", as: :getting_started
 
   namespace :api do
@@ -27,11 +28,11 @@ Rails.application.routes.draw do
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
   get ":owner/:repo", to: "repos#show", as: :repo_page, constraints: {
-    owner: /(?!api$)(?!git$)(?!home$)(?!search$)(?!up$)[a-z][a-z0-9-]*/,
+    owner: /(?!api$)(?!git$)(?!home$)(?!install\.sh$)(?!search$)(?!up$)[a-z][a-z0-9-]*/,
     repo: /[a-z][a-z0-9-]*/
   }
 
   get ":owner", to: "owners#show", as: :owner_page, constraints: {
-    owner: /(?!api$)(?!git$)(?!home$)(?!search$)(?!up$)[a-z][a-z0-9-]*/
+    owner: /(?!api$)(?!git$)(?!home$)(?!install\.sh$)(?!search$)(?!up$)[a-z][a-z0-9-]*/
   }
 end

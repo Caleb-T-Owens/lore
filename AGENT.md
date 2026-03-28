@@ -100,6 +100,8 @@ Important late-stage testing requirement:
 ## Durable environment notes
 
 - In this workspace, Rails bootstrap required installing `ruby-full`, `libsqlite3-dev`, and `libyaml-dev` before `bundle install` would succeed.
+- In this repo, run `bundle exec rails test` in serial mode. The demo-heavy CLI/server tests spawn real Rails servers and git flows against shared SQLite/git fixtures, so Rails test-worker parallelization is not reliable here.
+- Lore git post-receive hooks should `chdir` to the app root before booting Rails, because git can invoke hooks from temporary working directories that no longer exist.
 
 ## Ralph loop contract
 

@@ -31,6 +31,7 @@
 - End-to-end validation now covers register -> publish -> clone -> push -> metadata refresh across the CLI, API, forge, and repo page.
 - `README.md` now documents setup, running, seeding, CLI install, and the highest-signal demo validation commands.
 - A separate agent has now executed the Slack demo story against a live test server and confirmed search -> clone -> use -> improve -> push works end to end.
+- The full Rails test suite now passes reliably in serial mode, after stabilizing CLI/server integration tests around shared SQLite and git repo fixtures.
 - Target is a hackathon MVP optimized for the 1-minute demo flow.
 
 ## Highest-priority execution plan
@@ -102,4 +103,4 @@
 
 ## Next recommended increment
 
-- No remaining MVP items.
+- No remaining MVP items; MVP completion is now backed by a passing `bundle exec rails test` run plus the existing demo-critical end-to-end coverage.

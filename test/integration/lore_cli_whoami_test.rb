@@ -1,6 +1,7 @@
 require "test_helper"
 require "fileutils"
 require "open3"
+require "securerandom"
 require "socket"
 require "tmpdir"
 
@@ -14,9 +15,10 @@ class LoreCliWhoamiTest < ActiveSupport::TestCase
   end
 
   test "whoami prints the configured identity and starred repo count" do
-    owner = User.create!(username: "hazel")
+    suffix = SecureRandom.hex(4)
+    owner = User.create!(username: "hazel-#{suffix}")
     repo = Repo.create!(owner: owner, name: "slack-notify", description: "Posts to Slack", tags: ["slack"], path: "/tmp/slack-notify.git")
-    user = User.create!(username: "agent")
+    user = User.create!(username: "agent-#{suffix}")
     Star.create!(user: user, repo: repo)
 
     with_server do |base_url|
@@ -30,7 +32,7 @@ class LoreCliWhoamiTest < ActiveSupport::TestCase
 
         assert status.success?, "Expected lore whoami to succeed\nstdout:\n#{stdout}\nstderr:\n#{stderr}"
         assert_empty stderr
-        assert_includes stdout, "Username: agent"
+        assert_includes stdout, "Username: agent-#{suffix}"
         assert_includes stdout, "Host: #{base_url}"
         assert_includes stdout, "Starred repos: 1"
         assert_match(/Token: lore_pat\.\.\.[A-Za-z0-9_-]{4}/, stdout)

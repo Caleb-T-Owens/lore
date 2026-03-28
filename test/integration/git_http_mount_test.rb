@@ -7,6 +7,7 @@ class GitHttpMountTest < ActiveSupport::TestCase
     repo_root = Rails.application.config.x.lore.repo_root
 
     assert_equal Rails.root.join("tmp", "lore-repos").to_s, repo_root
+    FileUtils.mkdir_p(repo_root)
     assert Dir.exist?(repo_root)
   end
 

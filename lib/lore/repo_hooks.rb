@@ -20,6 +20,7 @@ module Lore
           main_updated = STDIN.each_line.any? { |line| line.split[2] == "refs/heads/main" }
           exit 0 unless main_updated
 
+          Dir.chdir(app_root)
           ENV["BUNDLE_GEMFILE"] ||= File.join(app_root, "Gemfile")
           require "bundler/setup"
           require File.join(app_root, "config", "environment")

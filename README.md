@@ -41,6 +41,17 @@ Useful environment variables:
 - `LORE_HOST` - canonical host used in clone URLs and onboarding output; defaults to `https://lore.cto.je`
 - `OPENAI_API_KEY` - required outside test for embeddings-backed search
 
+## Deploy On This VPS
+
+For the hackathon VPS, the simplest durable setup is a local systemd service on `127.0.0.1:3000`:
+
+```bash
+OPENAI_API_KEY=... script/deploy_vps
+curl -fsS http://127.0.0.1:3000/up
+```
+
+This installs `/etc/systemd/system/lore.service`, writes `/etc/lore.env`, and runs Lore in `development` mode with seeded demo data. Override `PORT` or `LORE_HOST` before running `script/deploy_vps` if this VPS gets a public reverse proxy later.
+
 ## Install The CLI
 
 From a running Lore server:

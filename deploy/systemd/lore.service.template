@@ -1,0 +1,15 @@
+[Unit]
+Description=Lore hackathon VPS service
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=__APP_ROOT__
+EnvironmentFile=-/etc/lore.env
+ExecStart=/usr/bin/env bash __APP_ROOT__/script/run_deployed_server
+Restart=always
+RestartSec=5
+SyslogIdentifier=lore
+
+[Install]
+WantedBy=multi-user.target

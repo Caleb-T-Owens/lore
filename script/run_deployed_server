@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+APP_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PORT="${PORT:-3000}"
+LORE_HOST="${LORE_HOST:-http://127.0.0.1:${PORT}}"
+
+export PORT
+export LORE_HOST
+export RAILS_ENV="${RAILS_ENV:-development}"
+
+cd "$APP_ROOT"
+
+bundle exec rails db:prepare db:seed
+exec bundle exec rails server -b 127.0.0.1 -p "$PORT"

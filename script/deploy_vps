@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+APP_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+TEMPLATE_PATH="$APP_ROOT/deploy/systemd/lore.service.template"
+UNIT_PATH="/etc/systemd/system/lore.service"
+ENV_PATH="/etc/lore.env"
+PORT="${PORT:-3000}"
+LORE_HOST="${LORE_HOST:-http://127.0.0.1:${PORT}}"
+
+if [[ -z "${OPENAI_API_KEY:-}" ]]; then
+  printf 'OPENAI_API_KEY must be set before deployment.\n' >&2
+  exit 1
+fi
+
+if [[ ! -f "$TEMPLATE_PATH" ]]; then
+  printf 'Missing systemd template: %s\n' "$TEMPLATE_PATH" >&2
+  exit 1
+fi
+
+umask 077
+cat > "$ENV_PATH" <<EOF
+OPENAI_API_KEY=${OPENAI_API_KEY}
+PORT=${PORT}
+LORE_HOST=${LORE_HOST}
+RAILS_ENV=${RAILS_ENV:-development}
+EOF
+
+APP_ROOT="$APP_ROOT" TEMPLATE_PATH="$TEMPLATE_PATH" UNIT_PATH="$UNIT_PATH" ruby <<'RUBY'
+template = File.read(ENV.fetch("TEMPLATE_PATH"))
+rendered = template.gsub("__APP_ROOT__", ENV.fetch("APP_ROOT"))
+File.write(ENV.fetch("UNIT_PATH"), rendered)
+RUBY
+
+systemctl daemon-reload
+systemctl enable --now lore.service
+systemctl restart lore.service
+systemctl --no-pager --full status lore.service
+
+printf '\nLore is expected at %s\n' "$LORE_HOST"
+printf 'Check health with: curl -fsS %s/up\n' "$LORE_HOST"

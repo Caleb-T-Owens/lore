@@ -32,6 +32,7 @@
 - `README.md` now documents setup, running, seeding, CLI install, and the highest-signal demo validation commands.
 - A separate agent has now executed the Slack demo story against a live test server and confirmed search -> clone -> use -> improve -> push works end to end.
 - The full Rails test suite now passes reliably in serial mode, after stabilizing CLI/server integration tests around shared SQLite and git repo fixtures.
+- VPS deployment plumbing now exists via `script/deploy_vps`, `script/run_deployed_server`, and a checked-in `systemd` unit template for a stable localhost demo service.
 - Target is a hackathon MVP optimized for the 1-minute demo flow.
 
 ## Highest-priority execution plan
@@ -103,4 +104,4 @@
 
 ## Next recommended increment
 
-- No remaining MVP items; MVP completion is now backed by a passing `bundle exec rails test` run plus the existing demo-critical end-to-end coverage.
+- Start the checked-in systemd service on this VPS, confirm the stable deployed URL, and run deployed smoke validation against web, API, git transport, and CLI install surfaces.

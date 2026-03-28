@@ -8,3 +8,313 @@
  *
  * Consider organizing styles into separate files for maintainability.
  */
+
+:root {
+  --paper: #f5efe2;
+  --ink: #1f1d1a;
+  --muted: #655f55;
+  --panel: rgba(255, 250, 241, 0.82);
+  --line: rgba(46, 37, 23, 0.12);
+  --accent: #c4632e;
+  --accent-deep: #7f3414;
+  --accent-soft: #f1d6bf;
+  --shadow: 0 24px 60px rgba(66, 39, 17, 0.12);
+  --display-font: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  --body-font: "Avenir Next", "Segoe UI", sans-serif;
+  --mono-font: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--body-font);
+  background:
+    radial-gradient(circle at top left, rgba(196, 99, 46, 0.25), transparent 32%),
+    radial-gradient(circle at right 20%, rgba(53, 119, 91, 0.18), transparent 24%),
+    linear-gradient(180deg, #f9f4eb 0%, #efe4d1 100%);
+}
+
+a {
+  color: inherit;
+}
+
+code,
+input,
+button {
+  font: inherit;
+}
+
+.home-shell {
+  width: min(1120px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 28px 0 64px;
+}
+
+.hero-panel,
+.loop-panel,
+.repos-panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 28px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(12px);
+}
+
+.hero-panel {
+  padding: 28px;
+}
+
+.eyebrow,
+.section-label,
+.repo-slug,
+.repo-clone,
+.repo-updated,
+.repo-stars,
+.loop-grid span {
+  font-family: var(--mono-font);
+}
+
+.eyebrow,
+.section-label {
+  margin: 0 0 10px;
+  color: var(--accent-deep);
+  font-size: 0.86rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.hero-copy,
+.section-heading {
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+}
+
+.hero-copy {
+  align-items: stretch;
+}
+
+.hero-copy h1,
+.loop-panel h2,
+.repos-panel h2,
+.empty-state h3 {
+  margin: 0;
+  font-family: var(--display-font);
+  font-weight: 600;
+  line-height: 0.95;
+}
+
+.hero-copy h1 {
+  max-width: 10ch;
+  font-size: clamp(3.2rem, 8vw, 5.8rem);
+}
+
+.hero-lead,
+.section-heading p,
+.loop-grid p,
+.search-card p,
+.action-stack p,
+.empty-state p {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.hero-lead {
+  max-width: 34rem;
+  margin: 18px 0 0;
+  font-size: 1.1rem;
+}
+
+.hero-actions {
+  width: min(100%, 380px);
+  display: grid;
+  gap: 16px;
+}
+
+.search-card,
+.action-stack,
+.repo-card,
+.loop-grid article,
+.empty-state {
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.56);
+}
+
+.search-card,
+.action-stack,
+.loop-grid article,
+.empty-state,
+.repo-card {
+  padding: 18px;
+}
+
+.search-card label {
+  display: block;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.search-row {
+  display: flex;
+  gap: 10px;
+}
+
+.search-row input {
+  flex: 1;
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid rgba(31, 29, 26, 0.14);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.search-row button,
+.primary-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 18px;
+  border-radius: 14px;
+  border: 0;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-deep) 100%);
+  color: #fff9f2;
+  cursor: pointer;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.stat-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin: 28px 0 0;
+}
+
+.stat-strip div {
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: rgba(127, 52, 20, 0.07);
+}
+
+.stat-strip dt {
+  color: var(--muted);
+}
+
+.stat-strip dd {
+  margin: 8px 0 0;
+  font-family: var(--display-font);
+  font-size: 2rem;
+}
+
+.loop-panel,
+.repos-panel {
+  margin-top: 22px;
+  padding: 24px;
+}
+
+.loop-grid,
+.repo-grid {
+  display: grid;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.loop-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.loop-grid span {
+  color: var(--accent-deep);
+  font-size: 0.92rem;
+}
+
+.loop-grid h3,
+.repo-description {
+  margin: 10px 0 0;
+}
+
+.repo-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.repo-card-top,
+.repo-tags {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.repo-slug,
+.repo-stars,
+.repo-clone,
+.repo-updated {
+  margin: 0;
+}
+
+.repo-slug,
+.repo-stars {
+  color: var(--accent-deep);
+  font-size: 0.88rem;
+}
+
+.repo-description {
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.repo-tags {
+  justify-content: flex-start;
+  margin-top: 16px;
+}
+
+.repo-tags span {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-deep);
+  font-size: 0.85rem;
+}
+
+.repo-clone,
+.repo-updated {
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: 0.84rem;
+  overflow-wrap: anywhere;
+}
+
+.empty-state {
+  margin-top: 18px;
+  text-align: center;
+}
+
+@media (max-width: 860px) {
+  .hero-copy,
+  .section-heading,
+  .search-row {
+    flex-direction: column;
+  }
+
+  .hero-actions {
+    width: 100%;
+  }
+
+  .loop-grid,
+  .repo-grid,
+  .stat-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-panel,
+  .loop-panel,
+  .repos-panel {
+    border-radius: 22px;
+  }
+}

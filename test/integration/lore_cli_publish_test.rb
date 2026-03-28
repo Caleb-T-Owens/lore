@@ -52,6 +52,38 @@ class LoreCliPublishTest < ActiveSupport::TestCase
     end
   end
 
+  test "publish prints a readable error when the repo name already exists" do
+    publisher = User.create!(username: "hazel")
+    Repo.create!(
+      owner: publisher,
+      name: "slack-notify",
+      description: "Existing repo",
+      path: File.join(Rails.application.config.x.lore.repo_root, "hazel", "slack-notify.git")
+    )
+
+    with_lore_test_server(log_name: "lore-cli-publish-server.log", host_override: true) do |base_url|
+      Dir.mktmpdir("lore-cli-home") do |home|
+        Dir.mktmpdir("lore-cli-project") do |parent|
+          project_path = File.join(parent, "slack-notify")
+          setup_local_repo(project_path)
+          write_lore_cli_config(home, base_url, publisher)
+
+          stdout, stderr, status = Open3.capture3(
+            { "HOME" => home },
+            "bash", Rails.root.join("bin", "lore").to_s,
+            "publish", project_path,
+            "--description", "Posts a message to a Slack webhook"
+          )
+
+          assert_not status.success?
+          assert_empty stdout
+          assert_includes stderr, "Lore API request failed (409): Name has already been taken"
+          assert_equal false, git_remote_exists?(project_path, "origin")
+        end
+      end
+    end
+  end
+
   private
 
   def setup_local_repo(project_path)
@@ -76,6 +108,11 @@ class LoreCliPublishTest < ActiveSupport::TestCase
     stdout, stderr, status = Open3.capture3("git", "-C", path, *args)
     assert status.success?, "Expected git #{args.join(' ')} to succeed\nstderr:\n#{stderr}"
     stdout.strip
+  end
+
+  def git_remote_exists?(path, remote_name)
+    _stdout, _stderr, status = Open3.capture3("git", "-C", path, "remote", "get-url", remote_name)
+    status.success?
   end
 
 end

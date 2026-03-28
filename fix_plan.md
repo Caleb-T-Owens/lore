@@ -25,6 +25,7 @@
 - `bin/lore publish` now creates a Lore repo from an existing git worktree, wires `origin`, and pushes the current branch to `main`.
 - `bin/lore push` now rebases cloned worktrees onto `origin/main`, sets an authenticated push URL, and pushes back to Lore.
 - Authenticated `whoami` support now exists across the API and CLI, including masked token display and starred repo counts.
+- CLI API failures now surface concise validation messages instead of raw JSON payload dumps, with focused coverage for duplicate register/publish flows.
 - `db/seeds.rb` now provisions the five demo repos with real commits, agent-readable READMEs, realistic stars, and recent push timestamps.
 - Search validation now covers the seeded demo queries, with `slack-notify` ranking first for the Slack-oriented prompts.
 - `/install.sh` now serves a real shell installer that writes the Lore CLI into `~/.local/bin` for onboarding.

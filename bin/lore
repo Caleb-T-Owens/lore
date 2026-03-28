@@ -88,14 +88,39 @@ api_request() {
   fi
 
   if [[ "$status" != 2* ]]; then
-    printf 'Lore API request failed (%s):\n' "$status" >&2
-    cat "$body_file" >&2
+    format_api_error "$status" "$body_file" >&2
     rm -f "$body_file"
     exit 1
   fi
 
   cat "$body_file"
   rm -f "$body_file"
+}
+
+format_api_error() {
+  local status="$1"
+  local body_file="$2"
+
+  ruby -rjson -e '
+    status = ARGV.fetch(0)
+    raw = File.read(ARGV.fetch(1)).strip
+
+    message = begin
+      payload = JSON.parse(raw)
+      if payload.is_a?(Hash) && payload["error"].to_s.strip != ""
+        payload["error"]
+      elsif payload.is_a?(Hash) && payload["errors"].is_a?(Hash)
+        payload["errors"].values.flatten.map(&:to_s).reject(&:empty?).uniq.join("; ")
+      end
+    rescue JSON::ParserError
+      nil
+    end
+
+    message = raw if message.to_s.strip.empty?
+    message = "Unknown error" if message.to_s.strip.empty?
+
+    puts "Lore API request failed (#{status}): #{message}"
+  ' "$status" "$body_file"
 }
 
 load_config() {

@@ -41,6 +41,24 @@ class LoreCliRegisterTest < ActiveSupport::TestCase
     end
   end
 
+  test "register prints a readable validation error for duplicate usernames" do
+    User.create!(username: "hazel")
+
+    with_lore_test_server(log_name: "lore-cli-server.log") do |base_url|
+      Dir.mktmpdir("lore-cli-home") do |home|
+        stdout, stderr, status = Open3.capture3(
+          { "HOME" => home, "LORE_HOST" => base_url },
+          "bash", Rails.root.join("bin", "lore").to_s, "register", "hazel"
+        )
+
+        assert_not status.success?
+        assert_empty stdout
+        assert_includes stderr, "Lore API request failed (409): Username has already been taken"
+        refute File.exist?(File.join(home, ".lore", "config"))
+      end
+    end
+  end
+
   private
 
   def git_config_value(path, key)

@@ -21,6 +21,7 @@
 - The app now serves `/getting-started.md` as markdown with the canonical Lore onboarding flow and command sequence.
 - A first CLI command now exists: `bin/lore register` creates an account, writes `~/.lore/config`, installs a local skill file, and sets git identity.
 - `bin/lore search` now calls the real search API and prints ranked results in predictable terminal output.
+- `bin/lore clone` now clones over the forge's anonymous Git Smart HTTP endpoint and auto-stars with the saved PAT.
 - Target is a hackathon MVP optimized for the 1-minute demo flow.
 
 ## Highest-priority execution plan
@@ -69,7 +70,7 @@
 
 - [x] Implement `lore register`.
 - [x] Implement `lore search` with predictable terminal output.
-- [ ] Implement `lore clone` with auto-star behavior.
+- [x] Implement `lore clone` with auto-star behavior.
 - [ ] Implement `lore publish`, `lore push`, and `lore whoami`.
 - [x] Install/save config in `~/.lore/config` and set git identity during register.
 
@@ -89,4 +90,4 @@
 
 ## Next recommended increment
 
-- Implement `lore clone` with auto-star behavior.
+- Implement `lore publish`, `lore push`, and `lore whoami`.

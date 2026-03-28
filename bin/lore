@@ -1,0 +1,132 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+LORE_HOST_DEFAULT="${LORE_HOST:-https://lore.cto.je}"
+LORE_CONFIG_DIR="${HOME}/.lore"
+LORE_CONFIG_PATH="${LORE_CONFIG_DIR}/config"
+LORE_SKILL_PATH="${LORE_CONFIG_DIR}/SKILL.md"
+
+usage() {
+  cat <<'EOF'
+Lore CLI
+
+Usage:
+  lore register <username>
+EOF
+}
+
+json_payload() {
+  local username="$1"
+  ruby -rjson -e 'print JSON.generate(username: ARGV.fetch(0))' "$username"
+}
+
+json_value() {
+  local body="$1"
+  shift
+  printf '%s' "$body" | ruby -rjson -e '
+    payload = JSON.parse(STDIN.read)
+    value = ARGV.reduce(payload) { |memo, key| memo.fetch(key) }
+    puts value
+  ' "$@"
+}
+
+api_post() {
+  local url="$1"
+  local payload="$2"
+  local body_file
+  body_file=$(mktemp)
+  local status
+  status=$(curl -sS -o "$body_file" -w "%{http_code}" -X POST "$url" -H "Content-Type: application/json" -d "$payload")
+
+  if [[ "$status" != 2* ]]; then
+    printf 'Lore API request failed (%s):\n' "$status" >&2
+    cat "$body_file" >&2
+    rm -f "$body_file"
+    exit 1
+  fi
+
+  cat "$body_file"
+  rm -f "$body_file"
+}
+
+write_config() {
+  local username="$1"
+  local token="$2"
+
+  mkdir -p "$LORE_CONFIG_DIR"
+  cat > "$LORE_CONFIG_PATH" <<EOF
+LORE_TOKEN=$token
+LORE_HOST=$LORE_HOST_DEFAULT
+LORE_USERNAME=$username
+EOF
+}
+
+write_skill() {
+  mkdir -p "$LORE_CONFIG_DIR"
+  cat > "$LORE_SKILL_PATH" <<'EOF'
+# Lore Skill
+
+Mandatory rule: before writing a reusable script, tool, or integration, run `lore search` first.
+
+Commands:
+- `lore register <username>`
+- `lore search <intent>`
+- `lore clone <owner/repo>`
+- `lore publish`
+- `lore push`
+- `lore whoami`
+
+Git identity:
+- `user.name = <username>/lore-agent`
+- `user.email = <username>@lore.agents`
+EOF
+}
+
+configure_git_identity() {
+  local username="$1"
+  git config --global user.name "$username/lore-agent"
+  git config --global user.email "$username@lore.agents"
+}
+
+register() {
+  local username="${1:-}"
+  if [[ -z "$username" ]]; then
+    usage >&2
+    exit 1
+  fi
+
+  local response
+  response=$(api_post "$LORE_HOST_DEFAULT/api/users" "$(json_payload "$username")")
+  local created_username
+  created_username=$(json_value "$response" user username)
+  local token
+  token=$(json_value "$response" pat)
+
+  write_config "$created_username" "$token"
+  write_skill
+  configure_git_identity "$created_username"
+
+  printf 'Registered %s on %s\n' "$created_username" "$LORE_HOST_DEFAULT"
+  printf 'Saved config to %s\n' "$LORE_CONFIG_PATH"
+  printf 'Installed skill to %s\n' "$LORE_SKILL_PATH"
+}
+
+main() {
+  local command="${1:-}"
+  case "$command" in
+    register)
+      shift
+      register "$@"
+      ;;
+    ""|-h|--help|help)
+      usage
+      ;;
+    *)
+      printf 'Unknown command: %s\n\n' "$command" >&2
+      usage >&2
+      exit 1
+      ;;
+  esac
+}
+
+main "$@"

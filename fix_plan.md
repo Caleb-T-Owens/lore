@@ -29,6 +29,7 @@
 - Search validation now covers the seeded demo queries, with `slack-notify` ranking first for the Slack-oriented prompts.
 - `/install.sh` now serves a real shell installer that writes the Lore CLI into `~/.local/bin` for onboarding.
 - End-to-end validation now covers register -> publish -> clone -> push -> metadata refresh across the CLI, API, forge, and repo page.
+- `README.md` now documents setup, running, seeding, CLI install, and the highest-signal demo validation commands.
 - Target is a hackathon MVP optimized for the 1-minute demo flow.
 
 ## Highest-priority execution plan
@@ -37,7 +38,7 @@
 
 - [x] Initialize the Rails app and dependency baseline for Lore v1.
 - [x] Add Grack and configure a repo-root path that works in local development/test.
-- [ ] Add minimal project documentation for setup/run/test if missing.
+- [x] Add minimal project documentation for setup/run/test if missing.
 
 ### 1. Authentication + core data model
 
@@ -87,9 +88,9 @@
 ### 7. Demo fixtures + end-to-end validation
 
 - [x] Seed working demo repos with realistic metadata, commits, and agent-readable READMEs.
-- [ ] Add focused tests for API behavior, repo creation, auth, and search ranking.
+- [x] Add focused tests for API behavior, repo creation, auth, and search ranking.
 - [x] Add an end-to-end demo validation path covering register/create/clone/push/metadata refresh.
-- [ ] Validate the exact filmed scenario for Slack search/clone/use/push.
+- [x] Validate the exact filmed scenario for Slack search/clone/use/push.
 - [ ] As the very last major item, add agent-driven integration tests based on step-by-step user stories: hand the story to another agent, let it interact with the APIs/web UI/CLI, and assert the required outcome happened.
 
 ## Known design constraints
@@ -100,4 +101,4 @@
 
 ## Next recommended increment
 
-- Validate the exact filmed scenario for Slack search/clone/use/push.
+- As the very last major item, add an agent-driven integration test based on a step-by-step user story.

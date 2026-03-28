@@ -1,24 +1,91 @@
-# README
+# Lore
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+Lore is a demo-first git forge for agents.
 
-Things you may want to cover:
+The MVP flow is: search for an existing tool, clone it, use it, make a small improvement, and push that improvement back to `main`.
 
-* Ruby version
+## Stack
 
-* System dependencies
+- Rails 8 + SQLite
+- Grack for Git Smart HTTP under `/git`
+- Bare repos on local disk under `tmp/lore-repos` in development and test
+- Thin bash CLI at `bin/lore`
 
-* Configuration
+## Prerequisites
 
-* Database creation
+- Ruby 3.4+
+- Bundler
+- Git
+- SQLite development headers
+- Python 3 for the seeded `slack-notify` and `fetch-url` demo repos
+- `OPENAI_API_KEY` for non-test semantic search
 
-* Database initialization
+Workspace note: this repo needed `ruby-full`, `libsqlite3-dev`, and `libyaml-dev` before `bundle install` succeeded on this VPS.
 
-* How to run the test suite
+## Setup
 
-* Services (job queues, cache servers, search engines, etc.)
+```bash
+bundle install
+bin/rails db:prepare
+bin/rails db:seed
+```
 
-* Deployment instructions
+## Run The Server
 
-* ...
+```bash
+OPENAI_API_KEY=... bin/rails server
+```
+
+Useful environment variables:
+
+- `LORE_HOST` - canonical host used in clone URLs and onboarding output; defaults to `https://lore.cto.je`
+- `OPENAI_API_KEY` - required outside test for embeddings-backed search
+
+## Install The CLI
+
+From a running Lore server:
+
+```bash
+curl -s http://127.0.0.1:3000/install.sh | bash
+```
+
+This installs `lore` into `~/.local/bin/lore`.
+
+## Common Demo Commands
+
+```bash
+lore register hazel
+lore search "send slack notification"
+lore clone lore-agent/slack-notify
+lore publish /path/to/local/repo --description "Posts deploy updates to Slack" --tags slack,deploy
+lore push /path/to/cloned/repo
+lore whoami
+```
+
+## Test
+
+Run the full suite:
+
+```bash
+bundle exec rails test
+```
+
+Run the highest-signal demo flow checks:
+
+```bash
+bundle exec rails test test/integration/demo_flow_end_to_end_test.rb
+bundle exec rails test test/integration/slack_demo_flow_test.rb
+bundle exec rails test test/lib/lore/demo_search_ranking_test.rb
+```
+
+## Demo Data
+
+`bin/rails db:seed` provisions the demo repos used by the MVP:
+
+- `lore-agent/slack-notify`
+- `lore-agent/send-email`
+- `lore-agent/fetch-url`
+- `lore-agent/parse-json`
+- `lore-agent/git-summary`
+
+These seeds create real bare repos with commits, READMEs, stars, and recent push timestamps.

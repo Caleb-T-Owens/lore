@@ -59,7 +59,6 @@ seed_repos = [
         ## Inputs
         - `SLACK_WEBHOOK_URL` - Slack incoming webhook URL - required
         - `MESSAGE` - Text to send - required
-        - `EMOJI` - Emoji override like `:rocket:` - optional
 
         ## Outputs
         - Prints `sent` on success
@@ -79,11 +78,7 @@ seed_repos = [
 
         webhook = os.environ["SLACK_WEBHOOK_URL"]
         message = os.environ["MESSAGE"]
-        emoji = os.environ.get("EMOJI")
-
         payload = {"text": message}
-        if emoji:
-          payload["icon_emoji"] = emoji
 
         request = urllib.request.Request(
           webhook,

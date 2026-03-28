@@ -33,6 +33,7 @@
 - Search validation now covers the seeded demo queries, with `slack-notify` ranking first for the Slack-oriented prompts.
 - `/install.sh` now serves a real shell installer that writes the Lore CLI into `~/.local/bin` for onboarding.
 - End-to-end validation now covers register -> publish -> clone -> push -> metadata refresh across the CLI, API, forge, and repo page.
+- End-to-end validation now also covers explicit `lore star` behavior in a demo-like loop and verifies star-count metadata refresh through API responses.
 - `README.md` now documents setup, running, seeding, CLI install, and the highest-signal demo validation commands.
 - A separate agent has now executed the Slack demo story against a live test server and confirmed search -> clone -> use -> improve -> push works end to end.
 - The full Rails test suite now passes reliably in serial mode, after stabilizing CLI/server integration tests around shared SQLite and git repo fixtures.
@@ -113,7 +114,7 @@
 
 - [x] Implement `lore star <owner/repo>` as an explicit CLI command with focused integration coverage for success and missing-token UX.
 - [x] Tighten CLI push UX so non-fast-forward/rebase conflicts surface a short actionable hint for the demo path.
-- [ ] Add focused integration coverage for explicit star behavior in a demo-like loop to reduce regression risk in repo/search/star flows.
+- [x] Add focused integration coverage for explicit star behavior in a demo-like loop to reduce regression risk in repo/search/star flows.
 
 ### 9. Deployment + public ingress (deprioritized)
 
@@ -129,4 +130,4 @@
 
 ## Next recommended increment
 
-- Add focused integration coverage for explicit star behavior in a demo-like loop to reduce regression risk across search/clone/star/push metadata surfaces.
+- No implementation-quality MVP gaps remain in-scope for this run; only the deprioritized public DNS/TLS cutover task remains.

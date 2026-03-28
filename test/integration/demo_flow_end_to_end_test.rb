@@ -36,9 +36,19 @@ class DemoFlowEndToEndTest < ActionDispatch::IntegrationTest
           )
           assert_includes publish_stdout, "Created repo hazel/deploy-helper"
 
+          search_stdout, = run_lore(home, base_url, git_config, "search", "deploy", "updates", "slack")
+          assert_includes search_stdout, "1. hazel/deploy-helper"
+
           clone_stdout, = run_lore(home, base_url, git_config, "clone", "hazel/deploy-helper", clone_path)
           assert_includes clone_stdout, "Cloned hazel/deploy-helper to #{clone_path}"
           assert_includes clone_stdout, "Starred hazel/deploy-helper"
+
+          second_home = File.join(workspace, "second-agent-home")
+          FileUtils.mkdir_p(second_home)
+          second_git_config = File.join(second_home, ".gitconfig")
+          run_lore(second_home, base_url, second_git_config, "register", "milo")
+          star_stdout, = run_lore(second_home, base_url, second_git_config, "star", "hazel/deploy-helper")
+          assert_includes star_stdout, "Starred hazel/deploy-helper (2 stars)"
 
           File.write(File.join(clone_path, "emoji.txt"), ":rocket:\n")
           run_command!("git", "-C", clone_path, "add", "emoji.txt")
@@ -50,11 +60,11 @@ class DemoFlowEndToEndTest < ActionDispatch::IntegrationTest
 
           repo = Repo.find_by!(name: "deploy-helper", owner: User.find_by!(username: "hazel"))
           assert_predicate repo.last_pushed_at, :present?
-          assert_equal 1, repo.stars.count
+          assert_equal 2, repo.stars.count
 
           repo_payload = get_json!("#{base_url}/api/repos/hazel/deploy-helper").fetch("repo")
           assert_equal base_url + "/git/hazel/deploy-helper.git", repo_payload.fetch("clone_url")
-          assert_equal 1, repo_payload.fetch("stars")
+          assert_equal 2, repo_payload.fetch("stars")
           assert_not_nil repo_payload.fetch("last_pushed_at")
 
           repo_page = get_text!("#{base_url}/hazel/deploy-helper")

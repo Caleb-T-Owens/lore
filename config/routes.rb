@@ -2,6 +2,11 @@ Rails.application.routes.draw do
   namespace :api do
     resources :repos, only: :create
     resources :users, only: :create
+
+    get "repos/:owner/:name", to: "repos#show", as: :repo
+    post "repos/:owner/:name/star", to: "repos#star", as: :star_repo
+    delete "repos/:owner/:name/star", to: "repos#unstar"
+    get "users/:username/repos", to: "users#repos", as: :user_repos
   end
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html

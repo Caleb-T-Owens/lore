@@ -18,6 +18,29 @@ module Api
       end
     end
 
+    def repos
+      user = User.find_by(username: params[:username])
+      return head :not_found unless user
+
+      repos = user.owned_repos
+        .includes(:stars)
+        .order(Arel.sql("CASE WHEN repos.last_pushed_at IS NULL THEN 1 ELSE 0 END"), last_pushed_at: :desc, created_at: :desc)
+
+      render json: {
+        repos: repos.map do |repo|
+          {
+            owner: user.username,
+            name: repo.name,
+            description: repo.description,
+            tags: repo.tags,
+            clone_url: repo.clone_url,
+            stars: repo.stars_count,
+            last_pushed_at: repo.last_pushed_at&.iso8601
+          }
+        end
+      }
+    end
+
     private
 
     def user_params

@@ -10,6 +10,8 @@
 - `POST /api/users` now creates accounts, returns the one-time plaintext PAT, and covers the registration path with focused integration tests.
 - `POST /api/repos` now requires bearer auth, creates bare repos on disk with `HEAD` on `main`, and returns canonical URLs from the create response.
 - Real Git transport is now covered with end-to-end validation for anonymous clone/fetch, authenticated push, non-fast-forward rejection, and `last_pushed_at` updates.
+- Public repo read APIs now cover per-repo metadata and owner repo listings with canonical URLs and recency ordering.
+- Star and unstar API flows now exist and update live star counts in repo responses.
 - Target is a hackathon MVP optimized for the 1-minute demo flow.
 
 ## Highest-priority execution plan
@@ -30,7 +32,7 @@
 ### 2. Repo creation + storage
 
 - [x] Implement repo creation API that validates owner/name, creates the DB row, initializes a bare repo on disk, and points `HEAD` at `main`.
-- [ ] Return canonical `web_url` and `clone_url` values from repo read APIs.
+- [x] Return canonical `web_url` and `clone_url` values from repo read APIs.
 - [x] Update repo metadata on successful pushes, including `last_pushed_at`.
 
 ### 3. Git Smart HTTP
@@ -43,7 +45,7 @@
 
 - [ ] Implement repo search API returning ranked results with similarity scores.
 - [ ] Add embedding generation/storage for `name + description + tags`.
-- [ ] Implement star/unstar flows and star counts.
+- [x] Implement star/unstar flows and star counts.
 - [ ] Ensure the seeded `slack-notify` repo is top-ranked for demo-critical queries.
 
 ### 5. Minimal web UI
@@ -78,4 +80,4 @@
 
 ## Next recommended increment
 
-- Add repo read APIs for public metadata (`GET /api/repos/:owner/:name` and `GET /api/users/:username/repos`).
+- Implement embedding-backed repo search with `GET /api/repos/search?q=...`.

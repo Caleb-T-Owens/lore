@@ -30,4 +30,43 @@ class ApiUsersTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_entity
     assert_includes response.parsed_body.fetch("errors").fetch("username"), "Username is invalid"
   end
+
+  test "lists a user's repos ordered by recent pushes" do
+    user = User.create!(username: "hazel")
+    Repo.create!(
+      owner: user,
+      name: "older-push",
+      description: "Older repo",
+      tags: ["one"],
+      path: "/tmp/older-push.git",
+      last_pushed_at: Time.zone.parse("2026-03-27 10:00:00 UTC")
+    )
+    Repo.create!(
+      owner: user,
+      name: "newer-push",
+      description: "Newer repo",
+      tags: ["two"],
+      path: "/tmp/newer-push.git",
+      last_pushed_at: Time.zone.parse("2026-03-28 10:00:00 UTC")
+    )
+    Repo.create!(
+      owner: user,
+      name: "never-pushed",
+      description: "No pushes yet",
+      tags: ["three"],
+      path: "/tmp/never-pushed.git"
+    )
+
+    get api_user_repos_path(username: user.username)
+
+    assert_response :success
+    assert_equal ["newer-push", "older-push", "never-pushed"], response.parsed_body.fetch("repos").map { |repo| repo.fetch("name") }
+    assert_equal ["hazel", "hazel", "hazel"], response.parsed_body.fetch("repos").map { |repo| repo.fetch("owner") }
+  end
+
+  test "returns not found when listing repos for an unknown user" do
+    get api_user_repos_path(username: "missing")
+
+    assert_response :not_found
+  end
 end

@@ -127,6 +127,30 @@ else
 fi
 
 if [[ -n "$resolved_ips" ]]; then
+  http_url="http://$PUBLIC_HOST/up"
+  print_check http "$http_url"
+
+  if public_http_headers="$(curl -fsS -o /dev/null -D - --connect-timeout "$CONNECT_TIMEOUT" --max-time "$MAX_TIME" "$http_url" 2>/dev/null)"; then
+    http_status_line="$(printf '%s\n' "$public_http_headers" | ruby -e 'puts STDIN.read.lines.first.to_s.strip')"
+    http_location="$(printf '%s\n' "$public_http_headers" | ruby -e 'location = STDIN.read.lines.find { |line| line.downcase.start_with?("location:") }; puts location.to_s.split(":", 2).last.to_s.strip')"
+
+    if [[ "$http_status_line" == *" 30"* ]] && [[ "$http_location" == https://$PUBLIC_HOST/* ]]; then
+      print_ok http "public HTTP redirects to HTTPS"
+    else
+      if http_body="$(curl -fsS --connect-timeout "$CONNECT_TIMEOUT" --max-time "$MAX_TIME" "$http_url" 2>/dev/null)"; then
+        if [[ "$http_body" == *"background-color: green"* ]]; then
+          print_ok http "public HTTP ingress reaches Lore"
+        else
+          print_blocker http "public HTTP responded, but /up body did not look healthy"
+        fi
+      else
+        print_blocker http "public HTTP responded to HEAD, but GET /up failed"
+      fi
+    fi
+  else
+    print_blocker http "public HTTP health check failed"
+  fi
+
   https_url="https://$PUBLIC_HOST/up"
   print_check https "$https_url"
 
@@ -140,6 +164,7 @@ if [[ -n "$resolved_ips" ]]; then
     print_blocker https "HTTPS health check failed"
   fi
 else
+  print_check http "skipped until DNS resolves"
   print_check https "skipped until DNS resolves"
 fi
 

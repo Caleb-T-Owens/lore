@@ -65,6 +65,34 @@ class CheckPublicIngressScriptTest < ActiveSupport::TestCase
     end
   end
 
+  test "treats local http to https redirects as ingress-ready" do
+    with_fake_commands(
+      "getent" => <<~SH,
+        #!/usr/bin/env bash
+        exit 2
+      SH
+      "ip" => <<~SH,
+        #!/usr/bin/env bash
+        printf '2: eth0    inet 203.0.113.10/24 brd 203.0.113.255 scope global eth0\n'
+      SH
+      "curl" => <<~SH
+        #!/usr/bin/env bash
+        case "$*" in
+          *"-o /dev/null -D -"*"http://127.0.0.1/up"*) printf 'HTTP/1.1 308 Permanent Redirect\r\nLocation: https://lore.cto.je/up\r\n\r\n' ;;
+          *"http://127.0.0.1/up"*) printf 'redirecting to https' ;;
+          *) exit 1 ;;
+        esac
+      SH
+    ) do |bin_dir|
+      stdout, stderr, status = run_script(bin_dir)
+
+      assert_not status.success?
+      assert_includes stderr, "[blocker] dns: lore.cto.je does not resolve yet"
+      assert_includes stdout, "[ok] local-proxy: local ingress redirects HTTP to HTTPS for lore.cto.je"
+      assert_includes stderr, "Blocker summary: public ingress is not fully ready for lore.cto.je"
+    end
+  end
+
   test "fails when dns resolves to the wrong expected ip" do
     with_fake_commands(
       "getent" => <<~SH,

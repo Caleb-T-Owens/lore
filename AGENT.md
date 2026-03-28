@@ -105,6 +105,7 @@ Important late-stage testing requirement:
 - On this VPS, `script/deploy_vps` installs a durable `lore.service` systemd unit plus `/etc/lore.env`; the current stable local deployment URL is `http://127.0.0.1:3000`.
 - On this VPS, `script/validate_deployed_smoke` is the highest-signal live validation path for the deployed service; it checks web UI, API, installer, CLI, anonymous clone, authenticated push, and repo metadata refresh end to end.
 - For the final `lore.cto.je` cutover, run `script/check_public_ingress` before the full smoke test; it distinguishes DNS/TLS failures from local ingress misconfiguration.
+- On this VPS, the current Caddy ingress is staged with `TLS_MODE=auto`; before DNS resolves, `script/check_public_ingress` should report the local HTTP-to-HTTPS redirect as healthy and leave only DNS/public HTTPS as blockers.
 
 ## Ralph loop contract
 

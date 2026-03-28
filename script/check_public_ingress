@@ -119,6 +119,15 @@ print_check local-proxy "GET $LOCAL_CHECK_URL with Host: $LOCAL_HOST_HEADER"
 if local_body="$(curl -fsS --connect-timeout "$CONNECT_TIMEOUT" --max-time "$MAX_TIME" -H "Host: $LOCAL_HOST_HEADER" "$LOCAL_CHECK_URL" 2>/dev/null)"; then
   if [[ "$local_body" == *"background-color: green"* ]]; then
     print_ok local-proxy "local ingress responds for $LOCAL_HOST_HEADER"
+  elif local_headers="$(curl -fsS -o /dev/null -D - --connect-timeout "$CONNECT_TIMEOUT" --max-time "$MAX_TIME" -H "Host: $LOCAL_HOST_HEADER" "$LOCAL_CHECK_URL" 2>/dev/null)"; then
+    local_status_line="$(printf '%s\n' "$local_headers" | ruby -e 'puts STDIN.read.lines.first.to_s.strip')"
+    local_location="$(printf '%s\n' "$local_headers" | ruby -e 'location = STDIN.read.lines.find { |line| line.downcase.start_with?("location:") }; puts location.to_s.split(":", 2).last.to_s.strip')"
+
+    if [[ "$local_status_line" == *" 30"* ]] && [[ "$local_location" == https://$LOCAL_HOST_HEADER/* ]]; then
+      print_ok local-proxy "local ingress redirects HTTP to HTTPS for $LOCAL_HOST_HEADER"
+    else
+      print_blocker local-proxy "local ingress responded, but /up did not look healthy or redirect to HTTPS"
+    fi
   else
     print_blocker local-proxy "local ingress responded, but /up body did not look healthy"
   fi

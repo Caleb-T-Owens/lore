@@ -12,14 +12,16 @@ class ApiReposTest < ActionDispatch::IntegrationTest
   end
 
   test "creates a bare repo for the authenticated user" do
-    post api_repos_path,
-      params: {
-        name: "Slack-Notify",
-        description: "Posts a message to a Slack webhook",
-        tags: ["slack", "notifications", "SLACK"]
-      },
-      headers: { "Authorization" => "Bearer #{@user.plain_pat}" },
-      as: :json
+    with_stubbed_embedding([0.25, 0.75]) do
+      post api_repos_path,
+        params: {
+          name: "Slack-Notify",
+          description: "Posts a message to a Slack webhook",
+          tags: ["slack", "notifications", "SLACK"]
+        },
+        headers: { "Authorization" => "Bearer #{@user.plain_pat}" },
+        as: :json
+    end
 
     assert_response :created
 
@@ -36,15 +38,18 @@ class ApiReposTest < ActionDispatch::IntegrationTest
     assert_nil payload.fetch("last_pushed_at")
     assert_equal repo.created_at.iso8601, payload.fetch("created_at")
     assert_equal File.join(@repo_root, "hazel", "slack-notify.git"), repo.path
+    assert_equal [0.25, 0.75], repo.embedding
     assert Dir.exist?(repo.path)
     assert File.executable?(File.join(repo.path, "hooks", "post-receive"))
     assert_equal "refs/heads/main", `git --git-dir="#{repo.path}" symbolic-ref HEAD`.strip
   end
 
   test "requires bearer authentication" do
-    post api_repos_path,
-      params: { name: "slack-notify", description: "Posts a message to a Slack webhook" },
-      as: :json
+    with_stubbed_embedding([0.25, 0.75]) do
+      post api_repos_path,
+        params: { name: "slack-notify", description: "Posts a message to a Slack webhook" },
+        as: :json
+    end
 
     assert_response :unauthorized
   end
@@ -187,20 +192,24 @@ class ApiReposTest < ActionDispatch::IntegrationTest
       path: File.join(@repo_root, "hazel", "slack-notify.git")
     )
 
-    post api_repos_path,
-      params: { name: "slack-notify", description: "Another repo" },
-      headers: { "Authorization" => "Bearer #{@user.plain_pat}" },
-      as: :json
+    with_stubbed_embedding([0.25, 0.75]) do
+      post api_repos_path,
+        params: { name: "slack-notify", description: "Another repo" },
+        headers: { "Authorization" => "Bearer #{@user.plain_pat}" },
+        as: :json
+    end
 
     assert_response :conflict
     assert_includes response.parsed_body.fetch("errors").fetch("name"), "Name has already been taken"
   end
 
   test "returns unprocessable entity for invalid repo attributes" do
-    post api_repos_path,
-      params: { name: "9bad", description: "" },
-      headers: { "Authorization" => "Bearer #{@user.plain_pat}" },
-      as: :json
+    with_stubbed_embedding([0.25, 0.75]) do
+      post api_repos_path,
+        params: { name: "9bad", description: "" },
+        headers: { "Authorization" => "Bearer #{@user.plain_pat}" },
+        as: :json
+    end
 
     assert_response :unprocessable_entity
 

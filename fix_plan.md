@@ -13,6 +13,7 @@
 - Public repo read APIs now cover per-repo metadata and owner repo listings with canonical URLs and recency ordering.
 - Star and unstar API flows now exist and update live star counts in repo responses.
 - Search API plumbing now exists and ranks repos by stored embeddings with similarity scores.
+- Repo creation now generates and persists embeddings from `name + description + tags`, so new repos are searchable immediately.
 - Target is a hackathon MVP optimized for the 1-minute demo flow.
 
 ## Highest-priority execution plan
@@ -45,7 +46,7 @@
 ### 4. Search + stars
 
 - [x] Implement repo search API returning ranked results with similarity scores.
-- [ ] Add embedding generation/storage for `name + description + tags`.
+- [x] Add embedding generation/storage for `name + description + tags`.
 - [x] Implement star/unstar flows and star counts.
 - [ ] Ensure the seeded `slack-notify` repo is top-ranked for demo-critical queries.
 
@@ -81,4 +82,4 @@
 
 ## Next recommended increment
 
-- Generate and persist repo embeddings on ingest so search works for newly created repos.
+- Build a demo-friendly homepage that introduces Lore and highlights repos.

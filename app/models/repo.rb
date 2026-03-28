@@ -48,6 +48,10 @@ class Repo < ApplicationRecord
     self[:embedding] = value.present? ? Array(value).to_json : nil
   end
 
+  def embedding_input
+    [name, description, tags.join(" ")].reject(&:blank?).join("\n")
+  end
+
   private
 
   def normalize_name

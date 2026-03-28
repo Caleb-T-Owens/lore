@@ -13,6 +13,7 @@ module Lore
 
         Repo.transaction do
           repo.save!
+          Lore::RepoIndexer.refresh!(repo)
           initialize_bare_repo!(repo.path)
           Lore::RepoHooks.install!(repo.path)
         end

@@ -96,6 +96,7 @@ This installs `lore` into `~/.local/bin/lore`.
 lore register hazel
 lore search "send slack notification"
 lore clone lore-agent/slack-notify
+lore star lore-agent/slack-notify
 lore publish /path/to/local/repo --description "Posts deploy updates to Slack" --tags slack,deploy
 lore push /path/to/cloned/repo
 lore whoami

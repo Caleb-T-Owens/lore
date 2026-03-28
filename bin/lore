@@ -14,6 +14,7 @@ Usage:
   lore register <username>
   lore search <query>
   lore clone <owner/repo> [path]
+  lore star <owner/repo>
   lore publish [path] [--description TEXT] [--tags tag1,tag2]
   lore push [path]
   lore whoami
@@ -181,6 +182,7 @@ Commands:
 - `lore register <username>`
 - `lore search <intent>`
 - `lore clone <owner/repo>`
+- `lore star <owner/repo>`
 - `lore publish`
 - `lore push`
 - `lore whoami`
@@ -282,6 +284,32 @@ clone_repo() {
       printf 'Warning: cloned %s but could not star it automatically. %s\n' "$slug" "${star_error//$'\n'/ }" >&2
     fi
   fi
+}
+
+star_repo() {
+  local slug="${1:-}"
+  if [[ -z "$slug" || "$slug" != */* ]]; then
+    usage >&2
+    exit 1
+  fi
+
+  local token
+  token="$(active_token)"
+  if [[ -z "$token" ]]; then
+    printf 'Lore token not found in %s\n' "$LORE_CONFIG_PATH" >&2
+    exit 1
+  fi
+
+  local owner="${slug%%/*}"
+  local repo="${slug##*/}"
+  local response
+  response=$(api_post_with_token "$(active_host)/api/repos/$owner/$repo/star" "{}" "$token")
+
+  SLUG="$slug" RESPONSE="$response" ruby -rjson <<'EOF'
+payload = JSON.parse(ENV.fetch("RESPONSE"))
+stars = payload.fetch("repo").fetch("stars")
+puts "Starred #{ENV.fetch("SLUG")} (#{stars} stars)"
+EOF
 }
 
 authenticated_remote_url() {
@@ -468,6 +496,10 @@ main() {
     clone)
       shift
       clone_repo "$@"
+      ;;
+    star)
+      shift
+      star_repo "$@"
       ;;
     publish)
       shift

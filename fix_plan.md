@@ -26,6 +26,7 @@
 - `bin/lore publish` now creates a Lore repo from an existing git worktree, wires `origin`, and pushes the current branch to `main`.
 - `bin/lore push` now rebases cloned worktrees onto `origin/main`, sets an authenticated push URL, and pushes back to Lore.
 - Authenticated `whoami` support now exists across the API and CLI, including masked token display and starred repo counts.
+- `bin/lore star` now exists as a first-class CLI command for explicit starring without cloning, aligned with the API star flow and Lore skill behavior.
 - CLI API failures now surface concise validation messages instead of raw JSON payload dumps, with focused coverage for duplicate register/publish flows.
 - `db/seeds.rb` now provisions the five demo repos with real commits, agent-readable READMEs, realistic stars, and recent push timestamps.
 - Search validation now covers the seeded demo queries, with `slack-notify` ranking first for the Slack-oriented prompts.
@@ -107,7 +108,13 @@
 - [x] Validate the exact filmed scenario for Slack search/clone/use/push.
 - [x] As the very last major item, add agent-driven integration tests based on step-by-step user stories: hand the story to another agent, let it interact with the APIs/web UI/CLI, and assert the required outcome happened.
 
-### 8. Deployment + public ingress
+### 8. Implementation refinement (demo-critical)
+
+- [x] Implement `lore star <owner/repo>` as an explicit CLI command with focused integration coverage for success and missing-token UX.
+- [ ] Tighten CLI push UX so non-fast-forward/rebase conflicts surface a short actionable hint for the demo path.
+- [ ] Add focused integration coverage for explicit star behavior in a demo-like loop to reduce regression risk in repo/search/star flows.
+
+### 9. Deployment + public ingress (deprioritized)
 
 - [x] Add a repo-checked public ingress configuration path that can reverse-proxy the local Lore service on port `80` now and switch to managed TLS later.
 - [x] Add a repeatable preflight that distinguishes local ingress readiness from DNS/TLS cutover failures.
@@ -121,4 +128,4 @@
 
 ## Next recommended increment
 
-- Point `lore.cto.je` at `116.202.10.147`, rerun `EXPECTED_IP=116.202.10.147 script/check_public_ingress` until DNS + HTTP + HTTPS all pass, then run `LORE_HOST=https://lore.cto.je script/validate_deployed_smoke`.
+- Tighten `bin/lore push` conflict ergonomics: keep existing behavior, but print a concise, actionable hint when `git pull --rebase origin main` fails so agents can recover quickly during the demo loop.

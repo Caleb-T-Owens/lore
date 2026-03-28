@@ -1,6 +1,7 @@
 module Api
   class UsersController < ApplicationController
     skip_forgery_protection
+    before_action :require_api_user!, only: :me
 
     def create
       user = User.new(user_params)
@@ -38,6 +39,16 @@ module Api
             last_pushed_at: repo.last_pushed_at&.iso8601
           }
         end
+      }
+    end
+
+    def me
+      render json: {
+        user: {
+          username: current_api_user.username,
+          created_at: current_api_user.created_at.iso8601,
+          starred_repos_count: current_api_user.stars.count
+        }
       }
     end
 

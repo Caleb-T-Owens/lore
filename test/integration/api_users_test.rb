@@ -69,4 +69,23 @@ class ApiUsersTest < ActionDispatch::IntegrationTest
 
     assert_response :not_found
   end
+
+  test "returns the authenticated user and starred repo count" do
+    user = User.create!(username: "hazel")
+    repo = Repo.create!(owner: user, name: "slack-notify", description: "Posts to Slack", tags: ["slack"], path: "/tmp/slack-notify.git")
+    stargazer = User.create!(username: "agent")
+    Star.create!(user: stargazer, repo: repo)
+
+    get api_current_user_path, headers: { "Authorization" => "Bearer #{stargazer.plain_pat}" }
+
+    assert_response :success
+    assert_equal "agent", response.parsed_body.dig("user", "username")
+    assert_equal 1, response.parsed_body.dig("user", "starred_repos_count")
+  end
+
+  test "requires authentication for the current user endpoint" do
+    get api_current_user_path
+
+    assert_response :unauthorized
+  end
 end

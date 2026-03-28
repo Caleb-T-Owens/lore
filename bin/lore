@@ -14,6 +14,7 @@ Usage:
   lore register <username>
   lore search <query>
   lore clone <owner/repo> [path]
+  lore whoami
 EOF
 }
 
@@ -41,6 +42,12 @@ api_post() {
 api_get() {
   local url="$1"
   api_request GET "$url" ""
+}
+
+api_get_with_token() {
+  local url="$1"
+  local token="$2"
+  api_request GET "$url" "" "Authorization: Bearer $token"
 }
 
 api_post_with_token() {
@@ -98,6 +105,15 @@ active_host() {
 active_token() {
   load_config
   printf '%s' "${LORE_TOKEN:-}"
+}
+
+mask_token() {
+  local token="$1"
+  if [[ ${#token} -le 12 ]]; then
+    printf '%s' "$token"
+  else
+    printf '%s...%s' "${token:0:8}" "${token: -4}"
+  fi
 }
 
 urlencode() {
@@ -226,6 +242,31 @@ clone_repo() {
   fi
 }
 
+whoami() {
+  local token
+  token="$(active_token)"
+  if [[ -z "$token" ]]; then
+    printf 'Lore token not found in %s\n' "$LORE_CONFIG_PATH" >&2
+    exit 1
+  fi
+
+  local host
+  host="$(active_host)"
+  local response
+  response=$(api_get_with_token "$host/api/me" "$token")
+
+  HOST="$host" TOKEN="$token" RESPONSE="$response" ruby -rjson <<'EOF'
+payload = JSON.parse(ENV.fetch("RESPONSE")).fetch("user")
+token = ENV.fetch("TOKEN")
+masked = token.length <= 12 ? token : "#{token[0, 8]}...#{token[-4, 4]}"
+
+puts "Username: #{payload.fetch("username")}"
+puts "Token: #{masked}"
+puts "Host: #{ENV.fetch("HOST")}"
+puts "Starred repos: #{payload.fetch("starred_repos_count")}"
+EOF
+}
+
 main() {
   local command="${1:-}"
   case "$command" in
@@ -240,6 +281,10 @@ main() {
     clone)
       shift
       clone_repo "$@"
+      ;;
+    whoami)
+      shift
+      whoami "$@"
       ;;
     ""|-h|--help|help)
       usage

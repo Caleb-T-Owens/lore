@@ -15,6 +15,7 @@
 - Search API plumbing now exists and ranks repos by stored embeddings with similarity scores.
 - Repo creation now generates and persists embeddings from `name + description + tags`, so new repos are searchable immediately.
 - The web UI now has a styled homepage at `/` with Lore positioning, a search CTA, trust signals, recent repos, and an intentional empty state.
+- The web UI now has a dedicated `/search` page with semantic ranking, linkable queries, and friendly empty/error states.
 - Target is a hackathon MVP optimized for the 1-minute demo flow.
 
 ## Highest-priority execution plan
@@ -54,7 +55,7 @@
 ### 5. Minimal web UI
 
 - [x] Build a homepage that introduces Lore and highlights repos in a demo-friendly way.
-- [ ] Build a dedicated search page for searching all repos.
+- [x] Build a dedicated search page for searching all repos.
 - [ ] Build a user page that lists a user's repos.
 - [ ] Build a repo detail page showing description, tags, stars, clone URL, and last push metadata.
 - [ ] Serve `getting-started.md` from the app.
@@ -83,4 +84,4 @@
 
 ## Next recommended increment
 
-- Build a dedicated search page for searching all repos.
+- Build a user page that lists a user's repos.

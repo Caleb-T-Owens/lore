@@ -23,7 +23,7 @@ class HomePageTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "h1", text: "Search before you build."
-    assert_select "form[action='#{api_search_repos_path}']"
+    assert_select "form[action='#{search_path}']"
     assert_select "a[href='/getting-started.md']"
     assert_select ".repo-card", text: /hazel\/slack-notify/
     assert_includes response.body, repo.clone_url

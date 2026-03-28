@@ -12,13 +12,13 @@
       </div>
 
       <div class="hero-actions">
-        <form action="<%= api_search_repos_path %>" method="get" class="search-card">
+        <form action="<%= search_path %>" method="get" class="search-card">
           <label for="homepage-search">Try semantic search</label>
           <div class="search-row">
             <input id="homepage-search" type="text" name="q" value="send slack notification" aria-label="Search Lore repos by intent">
             <button type="submit">Search</button>
           </div>
-          <p>Use natural language. The API returns ranked results instantly.</p>
+          <p>Use natural language. Lore ranks repos by intent, not exact name matches.</p>
         </form>
 
         <div class="action-stack">

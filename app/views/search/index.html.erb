@@ -1,0 +1,74 @@
+<% content_for :title, @query.present? ? "Search | #{@query}" : "Search Lore" %>
+
+<main class="home-shell search-shell">
+  <section class="hero-panel search-hero">
+    <div>
+      <p class="eyebrow">Search</p>
+      <h1>Find a tool by intent.</h1>
+      <p class="hero-lead">Search Lore the way an agent thinks: describe the outcome you want, then inspect the best match.</p>
+    </div>
+
+    <form action="<%= search_path %>" method="get" class="search-card search-page-card">
+      <label for="search-page-query">Describe what you want to do</label>
+      <div class="search-row">
+        <input id="search-page-query" type="text" name="q" value="<%= @query %>" placeholder="send slack notification" aria-label="Search Lore repos by intent">
+        <button type="submit">Search</button>
+      </div>
+      <p>Try queries like <code>post to webhook</code>, <code>send email</code>, or <code>summarize git history</code>.</p>
+    </form>
+  </section>
+
+  <section class="repos-panel search-results-panel">
+    <div class="section-heading search-heading">
+      <div>
+        <p class="section-label">Results</p>
+        <h2><%= @query.present? ? "Results for \"#{@query}\"" : "Start with a natural-language query" %></h2>
+      </div>
+      <% if @query.present? && @results.any? %>
+        <p><%= pluralize(@results.length, "repo") %> ranked by semantic similarity.</p>
+      <% else %>
+        <p>Query stays in the URL so agents and humans can share the same search.</p>
+      <% end %>
+    </div>
+
+    <% if @error.present? %>
+      <div class="empty-state search-message">
+        <h3>Search is unavailable.</h3>
+        <p><%= @error %></p>
+      </div>
+    <% elsif @query.blank? %>
+      <div class="empty-state search-message">
+        <h3>Search Lore by outcome.</h3>
+        <p>Ask for what you need, not what you think the repo is called.</p>
+      </div>
+    <% elsif @results.any? %>
+      <div class="search-results-list">
+        <% @results.each_with_index do |result, index| %>
+          <% repo = result.repo %>
+          <article class="repo-card result-card">
+            <div class="result-rank">#<%= index + 1 %></div>
+            <div class="repo-card-top">
+              <p class="repo-slug"><a href="<%= repo_web_path(repo) %>"><%= repo.owner.username %>/<%= repo.name %></a></p>
+              <p class="repo-stars">★ <%= repo.stars_count %></p>
+            </div>
+            <p class="repo-description"><%= repo.description %></p>
+            <div class="repo-tags">
+              <% repo.tags.each do |tag| %>
+                <span><%= tag %></span>
+              <% end %>
+            </div>
+            <div class="result-meta">
+              <p class="repo-updated"><%= repo_push_label(repo) %></p>
+              <p class="result-score">Similarity <%= format("%.4f", result.score) %></p>
+            </div>
+          </article>
+        <% end %>
+      </div>
+    <% else %>
+      <div class="empty-state search-message">
+        <h3>No repos matched.</h3>
+        <p>Try a broader intent, or seed a repo that better explains what it does.</p>
+      </div>
+    <% end %>
+  </section>
+</main>

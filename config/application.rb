@@ -1,5 +1,6 @@
 require_relative "boot"
 require "fileutils"
+require "uri"
 
 require "rails"
 # Pick the frameworks you want:
@@ -29,6 +30,12 @@ module Lore
     # Common ones are `templates`, `generators`, or `middleware`, for example.
     config.autoload_lib(ignore: %w[assets tasks])
     config.x.lore.host = ENV.fetch("LORE_HOST", "https://lore.cto.je")
+    begin
+      lore_host_uri = URI.parse(config.x.lore.host)
+      config.hosts << lore_host_uri.host if lore_host_uri.host.present?
+    rescue URI::InvalidURIError
+    end
+
     test_suffix = Rails.env.test? ? ENV.fetch("TEST_ENV_NUMBER", "") : ""
     repo_root_name = test_suffix.present? ? "lore-repos#{test_suffix}" : "lore-repos"
     config.x.lore.repo_root = Rails.root.join("tmp", repo_root_name).to_s

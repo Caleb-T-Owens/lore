@@ -35,7 +35,8 @@
 - VPS deployment plumbing now exists via `script/deploy_vps`, `script/run_deployed_server`, and a checked-in `systemd` unit template for a stable localhost demo service.
 - A live deployed smoke path is now scripted via `script/validate_deployed_smoke` to verify web, API, install, clone, publish, and push behavior against the VPS service.
 - Lore is now running on this VPS via `lore.service` at `http://127.0.0.1:3000`, and the deployed smoke script has passed against that live service.
-- Public ingress remains the only deployment blocker: `https://lore.cto.je/up` is currently unreachable, and nothing on this VPS is listening on `80` or `443` for Lore yet.
+- A Caddy-based public ingress path now exists via `script/configure_public_ingress`, with local host-header validation on port `80` for the Lore service.
+- Public DNS/TLS remains the only deployment blocker: `lore.cto.je` does not currently resolve here, so real `https://lore.cto.je/up` validation still cannot pass from this VPS.
 - Target is a hackathon MVP optimized for the 1-minute demo flow.
 
 ## Highest-priority execution plan
@@ -99,6 +100,11 @@
 - [x] Validate the exact filmed scenario for Slack search/clone/use/push.
 - [x] As the very last major item, add agent-driven integration tests based on step-by-step user stories: hand the story to another agent, let it interact with the APIs/web UI/CLI, and assert the required outcome happened.
 
+### 8. Deployment + public ingress
+
+- [x] Add a repo-checked public ingress configuration path that can reverse-proxy the local Lore service on port `80` now and switch to managed TLS later.
+- [ ] Point public DNS / ingress for `lore.cto.je` at this VPS and validate real HTTPS end to end.
+
 ## Known design constraints
 
 - Optimize for a compelling demo over long-term architecture purity.
@@ -107,4 +113,4 @@
 
 ## Next recommended increment
 
-- Deployment phase is complete for localhost demo use. The only remaining infra item is adding a reverse proxy or port-forward from `lore.cto.je` to the running local service if public ingress becomes available.
+- Once `lore.cto.je` resolves to this VPS, rerun `TLS_MODE=auto script/configure_public_ingress` and validate `https://lore.cto.je/up` plus `script/validate_deployed_smoke` against the public host.

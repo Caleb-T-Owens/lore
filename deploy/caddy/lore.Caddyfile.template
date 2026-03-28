@@ -1,0 +1,7 @@
+__SITE_LABEL__ {
+__TLS_DIRECTIVE__  encode zstd gzip
+  reverse_proxy __UPSTREAM__ {
+    header_up Host {upstream_hostport}
+    header_up X-Forwarded-Host {upstream_hostport}
+  }
+}

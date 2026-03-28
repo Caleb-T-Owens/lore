@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+APP_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+TEMPLATE_PATH="$APP_ROOT/deploy/caddy/lore.Caddyfile.template"
+CADDYFILE_PATH="${CADDYFILE_PATH:-/etc/caddy/Caddyfile}"
+PUBLIC_HOST="${PUBLIC_HOST:-lore.cto.je}"
+UPSTREAM="${UPSTREAM:-127.0.0.1:${PORT:-3000}}"
+TLS_MODE="${TLS_MODE:-auto}"
+INSTALL_CADDY="${INSTALL_CADDY:-1}"
+APPLY_CONFIG="${APPLY_CONFIG:-1}"
+
+if [[ ! -f "$TEMPLATE_PATH" ]]; then
+  printf 'Missing Caddy template: %s\n' "$TEMPLATE_PATH" >&2
+  exit 1
+fi
+
+case "$TLS_MODE" in
+  auto)
+    SITE_LABEL="$PUBLIC_HOST"
+    TLS_DIRECTIVE=""
+    ;;
+  http)
+    SITE_LABEL="http://$PUBLIC_HOST"
+    TLS_DIRECTIVE=""
+    ;;
+  internal)
+    SITE_LABEL="$PUBLIC_HOST"
+    TLS_DIRECTIVE="  tls internal\n"
+    ;;
+  *)
+    printf 'Unsupported TLS_MODE: %s (expected auto, http, or internal)\n' "$TLS_MODE" >&2
+    exit 1
+    ;;
+esac
+
+if ! command -v caddy >/dev/null 2>&1; then
+  if [[ "$INSTALL_CADDY" != "1" ]]; then
+    printf 'Caddy is not installed and INSTALL_CADDY=0 was set.\n' >&2
+    exit 1
+  fi
+
+  apt-get update
+  DEBIAN_FRONTEND=noninteractive apt-get install -y caddy
+fi
+
+mkdir -p "$(dirname "$CADDYFILE_PATH")"
+
+SITE_LABEL="$SITE_LABEL" TLS_DIRECTIVE="$TLS_DIRECTIVE" UPSTREAM="$UPSTREAM" TEMPLATE_PATH="$TEMPLATE_PATH" CADDYFILE_PATH="$CADDYFILE_PATH" ruby <<'RUBY'
+template = File.read(ENV.fetch("TEMPLATE_PATH"))
+rendered = template
+  .gsub("__SITE_LABEL__", ENV.fetch("SITE_LABEL"))
+  .gsub("__TLS_DIRECTIVE__", ENV.fetch("TLS_DIRECTIVE"))
+  .gsub("__UPSTREAM__", ENV.fetch("UPSTREAM"))
+File.write(ENV.fetch("CADDYFILE_PATH"), rendered)
+RUBY
+
+caddy fmt --overwrite "$CADDYFILE_PATH" >/dev/null
+caddy validate --config "$CADDYFILE_PATH"
+
+if [[ "$APPLY_CONFIG" == "1" ]]; then
+  systemctl enable --now caddy
+  systemctl reload caddy || systemctl restart caddy
+fi
+
+printf 'Configured Caddy ingress for %s -> %s (TLS_MODE=%s)\n' "$PUBLIC_HOST" "$UPSTREAM" "$TLS_MODE"
+printf 'Local validation: curl --resolve %s:80:127.0.0.1 http://%s/up\n' "$PUBLIC_HOST" "$PUBLIC_HOST"
+
+if [[ "$TLS_MODE" == "auto" ]]; then
+  printf 'When DNS points at this VPS, validate HTTPS with: curl -fsS https://%s/up\n' "$PUBLIC_HOST"
+fi

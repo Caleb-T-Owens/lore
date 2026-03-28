@@ -28,6 +28,7 @@
 - `db/seeds.rb` now provisions the five demo repos with real commits, agent-readable READMEs, realistic stars, and recent push timestamps.
 - Search validation now covers the seeded demo queries, with `slack-notify` ranking first for the Slack-oriented prompts.
 - `/install.sh` now serves a real shell installer that writes the Lore CLI into `~/.local/bin` for onboarding.
+- End-to-end validation now covers register -> publish -> clone -> push -> metadata refresh across the CLI, API, forge, and repo page.
 - Target is a hackathon MVP optimized for the 1-minute demo flow.
 
 ## Highest-priority execution plan
@@ -87,7 +88,7 @@
 
 - [x] Seed working demo repos with realistic metadata, commits, and agent-readable READMEs.
 - [ ] Add focused tests for API behavior, repo creation, auth, and search ranking.
-- [ ] Add an end-to-end demo validation path covering register/create/clone/push/metadata refresh.
+- [x] Add an end-to-end demo validation path covering register/create/clone/push/metadata refresh.
 - [ ] Validate the exact filmed scenario for Slack search/clone/use/push.
 - [ ] As the very last major item, add agent-driven integration tests based on step-by-step user stories: hand the story to another agent, let it interact with the APIs/web UI/CLI, and assert the required outcome happened.
 
@@ -99,4 +100,4 @@
 
 ## Next recommended increment
 
-- Add a demo-critical end-to-end validation path covering register/create/clone/push/metadata refresh.
+- Validate the exact filmed scenario for Slack search/clone/use/push.

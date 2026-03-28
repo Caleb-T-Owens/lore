@@ -90,6 +90,13 @@ Prefer focused validation after each increment, but keep these end goals in mind
 - Search for `send slack notification` returns `lore-agent/slack-notify` at the top
 - Seed/demo data exists and is usable
 
+Important late-stage testing requirement:
+
+- Treat agent-driven integration testing as one of the very last major items, after the MVP surfaces basically exist.
+- The integration test style should be a step-by-step user story.
+- That user story should be handed to another agent, which then executes the steps against the real APIs / web UI / CLI where practical.
+- The test should assert the intended outcome of the story, rather than only checking internal implementation details.
+
 ## Durable environment notes
 
 - In this workspace, Rails bootstrap required installing `ruby-full`, `libsqlite3-dev`, and `libyaml-dev` before `bundle install` would succeed.

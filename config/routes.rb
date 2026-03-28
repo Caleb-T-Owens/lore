@@ -2,6 +2,7 @@ Rails.application.routes.draw do
   root "home#index"
   get "home", to: redirect("/")
   get "search", to: "search#index", as: :search
+  get "getting-started.md", to: "getting_started#show", as: :getting_started
 
   namespace :api do
     resources :repos, only: :create

@@ -18,6 +18,7 @@
 - The web UI now has a dedicated `/search` page with semantic ranking, linkable queries, and friendly empty/error states.
 - The web UI now has an owner page at `/:owner`, with reserved-route-safe matching and recent repo ordering.
 - The web UI now has a repo detail page at `/:owner/:repo`, including clone affordances and README rendering from the bare repo's `main` branch.
+- The app now serves `/getting-started.md` as markdown with the canonical Lore onboarding flow and command sequence.
 - Target is a hackathon MVP optimized for the 1-minute demo flow.
 
 ## Highest-priority execution plan
@@ -60,7 +61,7 @@
 - [x] Build a dedicated search page for searching all repos.
 - [x] Build a user page that lists a user's repos.
 - [x] Build a repo detail page showing description, tags, stars, clone URL, and last push metadata.
-- [ ] Serve `getting-started.md` from the app.
+- [x] Serve `getting-started.md` from the app.
 
 ### 6. Lore CLI
 
@@ -86,4 +87,4 @@
 
 ## Next recommended increment
 
-- Serve `getting-started.md` from the app.
+- Implement `lore register`.

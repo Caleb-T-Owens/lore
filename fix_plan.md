@@ -6,6 +6,7 @@
 - Rails 8.1 app skeleton is bootstrapped in-repo with SQLite and a passing baseline test run.
 - Grack is bundled, mounted under `/git`, and backed by a local repo root at `tmp/lore-repos` with a passing Rack-level integration test.
 - Core `User`, `Repo`, and `Star` models now exist with SQLite constraints, validations, and PAT digest issuance at user creation.
+- Shared bearer-token and basic-auth helpers now resolve users from PATs for both the future API and Git middleware.
 - Target is a hackathon MVP optimized for the 1-minute demo flow.
 
 ## Highest-priority execution plan
@@ -20,7 +21,7 @@
 
 - [x] Implement `User`, `Repo`, and `Star` models with the required constraints and validations.
 - [x] Implement PAT issuance on user creation with digest-only storage.
-- [ ] Add auth helpers for bearer PAT API auth and Basic auth for git transport.
+- [x] Add auth helpers for bearer PAT API auth and Basic auth for git transport.
 
 ### 2. Repo creation + storage
 
@@ -72,4 +73,4 @@
 
 ## Next recommended increment
 
-- Add reusable bearer/basic auth helpers so the upcoming API and Git middleware can resolve users from PATs the same way.
+- Build `POST /api/users` so registration returns the one-time PAT and makes the CLI/onboarding path real.

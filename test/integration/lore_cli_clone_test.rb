@@ -48,6 +48,41 @@ class LoreCliCloneTest < ActiveSupport::TestCase
     end
   end
 
+  test "clone still succeeds when auto-starring fails" do
+    owner = User.create!(username: "hazel")
+    repo = Lore::RepoProvisioner.create(
+      owner: owner,
+      params: {
+        name: "slack-notify",
+        description: "Posts to Slack",
+        tags: ["slack"]
+      }
+    )
+    seed_repo(repo.path, "# Slack Notify\n")
+
+    with_lore_test_server(log_name: "lore-cli-clone-server.log") do |base_url|
+      Dir.mktmpdir("lore-cli-home") do |home|
+        Dir.mktmpdir("lore-cli-clone") do |dir|
+          clone_path = File.join(dir, "slack-notify")
+          config_user = Struct.new(:plain_pat, :username).new("invalid-token", "agent")
+          write_lore_cli_config(home, base_url, config_user)
+
+          stdout, stderr, status = Open3.capture3(
+            { "HOME" => home },
+            "bash", Rails.root.join("bin", "lore").to_s, "clone", "hazel/slack-notify", clone_path
+          )
+
+          assert status.success?, "Expected lore clone to succeed even when auto-star fails\nstdout:\n#{stdout}\nstderr:\n#{stderr}"
+          assert_includes stdout, "Cloned hazel/slack-notify to #{clone_path}"
+          refute_includes stdout, "Starred hazel/slack-notify"
+          assert_includes stderr, "Warning: cloned hazel/slack-notify but could not star it automatically."
+          assert_equal "# Slack Notify\n", File.read(File.join(clone_path, "README.md"))
+          assert_equal 0, repo.stars.count
+        end
+      end
+    end
+  end
+
   private
 
   def seed_repo(repo_path, readme_content)

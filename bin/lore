@@ -275,8 +275,12 @@ clone_repo() {
   local token
   token="$(active_token)"
   if [[ -n "$token" ]]; then
-    api_post_with_token "$(active_host)/api/repos/$owner/$repo/star" "{}" "$token" >/dev/null
-    printf 'Starred %s\n' "$slug"
+    local star_error
+    if star_error=$(api_post_with_token "$(active_host)/api/repos/$owner/$repo/star" "{}" "$token" 2>&1 >/dev/null); then
+      printf 'Starred %s\n' "$slug"
+    else
+      printf 'Warning: cloned %s but could not star it automatically. %s\n' "$slug" "${star_error//$'\n'/ }" >&2
+    fi
   fi
 }
 

@@ -22,6 +22,7 @@
 - A first CLI command now exists: `bin/lore register` creates an account, writes `~/.lore/config`, installs a local skill file, and sets git identity.
 - `bin/lore search` now calls the real search API and prints ranked results in predictable terminal output.
 - `bin/lore clone` now clones over the forge's anonymous Git Smart HTTP endpoint and auto-stars with the saved PAT.
+- `bin/lore clone` now treats auto-starring as best-effort, so a stale PAT cannot derail an otherwise successful demo clone.
 - `bin/lore publish` now creates a Lore repo from an existing git worktree, wires `origin`, and pushes the current branch to `main`.
 - `bin/lore push` now rebases cloned worktrees onto `origin/main`, sets an authenticated push URL, and pushes back to Lore.
 - Authenticated `whoami` support now exists across the API and CLI, including masked token display and starred repo counts.

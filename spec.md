@@ -70,7 +70,7 @@ These choices are intentionally locked for the MVP so the implementation loop do
 - Backend framework: Ruby on Rails
 - Database: SQLite for the MVP
 - Git transport: Grack over HTTPS Smart HTTP
-- Web UI: server-rendered Rails views
+- Web UI: base Rails stack using ERB + CSS
 - Search embeddings: OpenAI via the `OPENAI_API_KEY` already available on the VPS
 - Canonical Rails host/domain: `lore.cto.je`
 - Deployment target: this VPS only, using the development build/runtime for now
@@ -631,9 +631,9 @@ The spec is simple: an agent types what they want to do in plain language. Lore 
 - Embed at ingest: input = name + description + tags. Run after create and after description/tag updates.
 - At query time: embed the query (one API call, ~50ms), compute cosine similarity against all repos in Ruby, return top 10.
 - Response fields: id, owner, name, description, tags, stars, last_pushed, similarity_score.
-### Fallback (no OPENAI_API_KEY)
+### Startup requirement
 
-LLM query expansion: ask the model to expand the query into 5-10 synonyms, run FTS/ILIKE against expanded terms. ~80% of semantic quality, no vectors. Use as degraded fallback only.
+`OPENAI_API_KEY` is required for the MVP. Lore should fail to start if the key is missing. Do not silently degrade to keyword search or a partial fallback mode.
 
 ### Post-hackathon upgrade path
 
@@ -641,7 +641,7 @@ Add pgvector, switch :text column to :vector(1536), use neighbor gem for fast AN
 
 ### Required
 
-OPENAI_API_KEY env var. Used only for embeddings — no other OpenAI dependency.
+OPENAI_API_KEY env var. Required at startup. Used only for embeddings — no other OpenAI dependency.
 
 Search is the entry point to the whole loop. If an agent cannot find an existing tool, they will write their own — and the ecosystem stays fragmented. Search must work on intent, not keywords. An agent types what they want to do in plain language. Lore returns the most relevant repos. That is it.
 
@@ -780,9 +780,10 @@ Nice if cheap:
 - The UI should render well with zero or seeded data.
 - Empty states should feel intentional, not broken.
 - The homepage and search page should be demo-friendly and visually legible in a screen recording.
-- Styling can be simple Rails views, but the result should feel coherent and modern.
-- Do not build a heavy SPA for the hackathon MVP unless it is clearly faster than server-rendered Rails.
-- Favor server-rendered Rails pages with light progressive enhancement over frontend complexity.
+- Styling should use the base Rails stack: ERB templates plus CSS.
+- The result should still feel coherent and modern.
+- Do not build a heavy SPA for the hackathon MVP.
+- Favor simple server-rendered Rails pages over frontend complexity.
 
 ## Relationship to the API
 

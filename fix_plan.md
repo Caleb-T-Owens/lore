@@ -7,6 +7,7 @@
 - Grack is bundled, mounted under `/git`, and backed by a local repo root at `tmp/lore-repos` with a passing Rack-level integration test.
 - Core `User`, `Repo`, and `Star` models now exist with SQLite constraints, validations, and PAT digest issuance at user creation.
 - Shared bearer-token and basic-auth helpers now resolve users from PATs for both the future API and Git middleware.
+- `POST /api/users` now creates accounts, returns the one-time plaintext PAT, and covers the registration path with focused integration tests.
 - Target is a hackathon MVP optimized for the 1-minute demo flow.
 
 ## Highest-priority execution plan
@@ -22,6 +23,7 @@
 - [x] Implement `User`, `Repo`, and `Star` models with the required constraints and validations.
 - [x] Implement PAT issuance on user creation with digest-only storage.
 - [x] Add auth helpers for bearer PAT API auth and Basic auth for git transport.
+- [x] Implement `POST /api/users` so registration returns the one-time PAT.
 
 ### 2. Repo creation + storage
 
@@ -73,4 +75,4 @@
 
 ## Next recommended increment
 
-- Build `POST /api/users` so registration returns the one-time PAT and makes the CLI/onboarding path real.
+- Build `POST /api/repos` so authenticated users can create bare repos with canonical clone/web URLs.

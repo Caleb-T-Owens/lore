@@ -35,7 +35,7 @@
 ### 3. Git Smart HTTP
 
 - [x] Mount Grack under `/git`.
-- [ ] Add middleware that resolves repo access from the request path and enforces Lore v1 rules.
+- [x] Add middleware that resolves repo access from the request path and enforces Lore v1 rules.
 - [ ] Validate anonymous clone/fetch, authenticated push, and non-fast-forward rejection to `main`.
 
 ### 4. Search + stars
@@ -67,6 +67,7 @@
 - [ ] Add focused tests for API behavior, repo creation, auth, and search ranking.
 - [ ] Add an end-to-end demo validation path covering register/create/clone/push/metadata refresh.
 - [ ] Validate the exact filmed scenario for Slack search/clone/use/push.
+- [ ] As the very last major item, add agent-driven integration tests based on step-by-step user stories: hand the story to another agent, let it interact with the APIs/web UI/CLI, and assert the required outcome happened.
 
 ## Known design constraints
 
@@ -76,4 +77,4 @@
 
 ## Next recommended increment
 
-- Add Lore's git auth middleware so clone stays anonymous while push requires valid Basic auth.
+- Validate real git push behavior end-to-end: anonymous fetch, authenticated push, and non-fast-forward rejection on `main`.

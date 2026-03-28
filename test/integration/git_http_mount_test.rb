@@ -12,10 +12,17 @@ class GitHttpMountTest < ActiveSupport::TestCase
 
   test "mounts grack under git for upload-pack discovery" do
     repo_root = Rails.application.config.x.lore.repo_root
-    repo_path = File.join(repo_root, "demo", "tool.git")
+    owner = User.create!(username: "demo")
+    repo = Lore::RepoProvisioner.create(
+      owner: owner,
+      params: {
+        name: "tool",
+        description: "Demo tool",
+        tags: [ "demo" ]
+      }
+    )
 
-    FileUtils.mkdir_p(File.dirname(repo_path))
-    system("git", "init", "--bare", "--initial-branch=main", repo_path, exception: true)
+    assert_predicate repo, :persisted?
 
     app = Rack::Builder.parse_file(Rails.root.join("config.ru").to_s)
     response = Rack::MockRequest.new(app).get(

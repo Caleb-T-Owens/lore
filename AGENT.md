@@ -102,6 +102,8 @@ Important late-stage testing requirement:
 - In this workspace, Rails bootstrap required installing `ruby-full`, `libsqlite3-dev`, and `libyaml-dev` before `bundle install` would succeed.
 - In this repo, run `bundle exec rails test` in serial mode. The demo-heavy CLI/server tests spawn real Rails servers and git flows against shared SQLite/git fixtures, so Rails test-worker parallelization is not reliable here.
 - Lore git post-receive hooks should `chdir` to the app root before booting Rails, because git can invoke hooks from temporary working directories that no longer exist.
+- On this VPS, `script/deploy_vps` installs a durable `lore.service` systemd unit plus `/etc/lore.env`; the current stable local deployment URL is `http://127.0.0.1:3000`.
+- On this VPS, `script/validate_deployed_smoke` is the highest-signal live validation path for the deployed service; it checks web UI, API, installer, CLI, anonymous clone, authenticated push, and repo metadata refresh end to end.
 
 ## Ralph loop contract
 

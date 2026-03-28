@@ -1,0 +1,110 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+BASE_URL="${LORE_HOST:-http://127.0.0.1:${PORT:-3000}}"
+TMP_ROOT="$(mktemp -d /tmp/lore-deploy-smoke-XXXXXX)"
+HOME_DIR="$TMP_ROOT/home"
+WORK_DIR="$TMP_ROOT/work"
+CLI_PATH="$HOME_DIR/.local/bin/lore"
+SUFFIX="$(date +%s)-$RANDOM"
+USERNAME="deploy-smoke-$SUFFIX"
+REPO_NAME="deploy-smoke-tool-$SUFFIX"
+PUBLISHED_DIR="$WORK_DIR/$REPO_NAME"
+CLONE_DIR="$WORK_DIR/${REPO_NAME}-clone"
+
+cleanup() {
+  rm -rf "$TMP_ROOT"
+}
+
+trap cleanup EXIT
+
+mkdir -p "$HOME_DIR" "$WORK_DIR"
+
+expect_contains() {
+  local haystack="$1"
+  local needle="$2"
+  local label="$3"
+
+  if [[ "$haystack" != *"$needle"* ]]; then
+    printf 'Validation failed for %s: expected to find %s\n' "$label" "$needle" >&2
+    exit 1
+  fi
+}
+
+printf 'Validating deployed Lore at %s\n' "$BASE_URL"
+
+health_body="$(curl -fsS "$BASE_URL/up")"
+expect_contains "$health_body" "background-color: green" "health endpoint"
+
+home_body="$(curl -fsS "$BASE_URL/")"
+expect_contains "$home_body" "git forge for agents" "home page"
+
+search_page_body="$(curl -fsS "$BASE_URL/search?q=send%20slack%20notification")"
+expect_contains "$search_page_body" "lore-agent/slack-notify" "search page"
+
+api_search_body="$(curl -fsS "$BASE_URL/api/repos/search?q=send%20slack%20notification")"
+expect_contains "$api_search_body" '"name":"slack-notify"' "search api"
+
+curl -fsS "$BASE_URL/install.sh" | HOME="$HOME_DIR" LORE_HOST="$BASE_URL" bash
+
+if [[ ! -x "$CLI_PATH" ]]; then
+  printf 'Validation failed: CLI was not installed to %s\n' "$CLI_PATH" >&2
+  exit 1
+fi
+
+register_output="$(HOME="$HOME_DIR" LORE_HOST="$BASE_URL" "$CLI_PATH" register "$USERNAME")"
+expect_contains "$register_output" "Registered $USERNAME" "cli register"
+
+whoami_output="$(HOME="$HOME_DIR" "$CLI_PATH" whoami)"
+expect_contains "$whoami_output" "Username: $USERNAME" "cli whoami"
+expect_contains "$whoami_output" "Host: $BASE_URL" "cli whoami host"
+
+cli_search_output="$(HOME="$HOME_DIR" "$CLI_PATH" search "send slack notification")"
+expect_contains "$cli_search_output" "1. lore-agent/slack-notify" "cli search top result"
+
+HOME="$HOME_DIR" "$CLI_PATH" clone lore-agent/slack-notify "$WORK_DIR/slack-notify"
+if [[ ! -f "$WORK_DIR/slack-notify/README.md" ]]; then
+  printf 'Validation failed: cloned seeded repo is missing README.md\n' >&2
+  exit 1
+fi
+
+mkdir -p "$PUBLISHED_DIR"
+git -C "$PUBLISHED_DIR" init -b main >/dev/null
+cat > "$PUBLISHED_DIR/README.md" <<EOF
+# $REPO_NAME
+
+Smoke repo for deployed Lore validation.
+EOF
+git -C "$PUBLISHED_DIR" add README.md
+git -C "$PUBLISHED_DIR" commit -m "Initial smoke commit" >/dev/null
+
+publish_output="$(HOME="$HOME_DIR" "$CLI_PATH" publish "$PUBLISHED_DIR" --description "Smoke repo for deployed validation" --tags smoke,deployed)"
+expect_contains "$publish_output" "Created repo $USERNAME/$REPO_NAME" "cli publish"
+
+repo_api_body="$(curl -fsS "$BASE_URL/api/repos/$USERNAME/$REPO_NAME")"
+expect_contains "$repo_api_body" "\"owner\":\"$USERNAME\"" "repo api owner"
+expect_contains "$repo_api_body" "\"name\":\"$REPO_NAME\"" "repo api name"
+
+repo_page_body="$(curl -fsS "$BASE_URL/$USERNAME/$REPO_NAME")"
+expect_contains "$repo_page_body" "$USERNAME/$REPO_NAME" "repo page"
+
+git clone "$BASE_URL/git/$USERNAME/$REPO_NAME.git" "$CLONE_DIR" >/dev/null 2>&1
+if [[ ! -f "$CLONE_DIR/README.md" ]]; then
+  printf 'Validation failed: anonymous git clone did not produce README.md\n' >&2
+  exit 1
+fi
+
+cat >> "$CLONE_DIR/README.md" <<'EOF'
+
+Validated deployed push path.
+EOF
+git -C "$CLONE_DIR" add README.md
+git -C "$CLONE_DIR" commit -m "Validate deployed push path" >/dev/null
+push_output="$(HOME="$HOME_DIR" "$CLI_PATH" push "$CLONE_DIR")"
+expect_contains "$push_output" "Pushing $CLONE_DIR to main" "cli push"
+
+updated_repo_api_body="$(curl -fsS "$BASE_URL/api/repos/$USERNAME/$REPO_NAME")"
+expect_contains "$updated_repo_api_body" '"last_pushed_at":' "repo api last_pushed_at"
+
+printf 'Deployed smoke validation passed for %s\n' "$BASE_URL"
+printf 'Validated web UI, API, install.sh, CLI, anonymous clone, authenticated push, and repo metadata refresh.\n'

@@ -52,6 +52,12 @@ curl -fsS http://127.0.0.1:3000/up
 
 This installs `/etc/systemd/system/lore.service`, writes `/etc/lore.env`, and runs Lore in `development` mode with seeded demo data. Override `PORT` or `LORE_HOST` before running `script/deploy_vps` if this VPS gets a public reverse proxy later.
 
+Run the deployed smoke test against that live service with:
+
+```bash
+script/validate_deployed_smoke
+```
+
 ## Install The CLI
 
 From a running Lore server:

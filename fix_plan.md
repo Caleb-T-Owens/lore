@@ -4,6 +4,7 @@
 
 - Source-of-truth spec exported to `spec.md`.
 - Rails 8.1 app skeleton is bootstrapped in-repo with SQLite and a passing baseline test run.
+- Grack is bundled, mounted under `/git`, and backed by a local repo root at `tmp/lore-repos` with a passing Rack-level integration test.
 - Target is a hackathon MVP optimized for the 1-minute demo flow.
 
 ## Highest-priority execution plan
@@ -11,7 +12,7 @@
 ### 0. Project bootstrap
 
 - [x] Initialize the Rails app and dependency baseline for Lore v1.
-- [ ] Add Grack and configure a repo-root path that works in local development/test.
+- [x] Add Grack and configure a repo-root path that works in local development/test.
 - [ ] Add minimal project documentation for setup/run/test if missing.
 
 ### 1. Authentication + core data model
@@ -28,7 +29,7 @@
 
 ### 3. Git Smart HTTP
 
-- [ ] Mount Grack under `/git`.
+- [x] Mount Grack under `/git`.
 - [ ] Add middleware that resolves repo access from the request path and enforces Lore v1 rules.
 - [ ] Validate anonymous clone/fetch, authenticated push, and non-fast-forward rejection to `main`.
 
@@ -70,4 +71,4 @@
 
 ## Next recommended increment
 
-- Add Grack plus a hard-coded local repo root, then mount the Smart HTTP entrypoint under `/git`.
+- Implement the core models plus PAT auth so both the API and future Git middleware can share one authentication path.

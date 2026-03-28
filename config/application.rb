@@ -1,4 +1,5 @@
 require_relative "boot"
+require "fileutils"
 
 require "rails"
 # Pick the frameworks you want:
@@ -27,6 +28,10 @@ module Lore
     # not contain `.rb` files, or that should not be reloaded or eager loaded.
     # Common ones are `templates`, `generators`, or `middleware`, for example.
     config.autoload_lib(ignore: %w[assets tasks])
+    config.x.lore.repo_root = Rails.root.join("tmp", "lore-repos").to_s
+    config.after_initialize do
+      FileUtils.mkdir_p(config.x.lore.repo_root)
+    end
 
     # Configuration for the application, engines, and railties goes here.
     #

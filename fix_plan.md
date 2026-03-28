@@ -25,6 +25,7 @@
 - `bin/lore publish` now creates a Lore repo from an existing git worktree, wires `origin`, and pushes the current branch to `main`.
 - `bin/lore push` now rebases cloned worktrees onto `origin/main`, sets an authenticated push URL, and pushes back to Lore.
 - Authenticated `whoami` support now exists across the API and CLI, including masked token display and starred repo counts.
+- `db/seeds.rb` now provisions the five demo repos with real commits, agent-readable READMEs, realistic stars, and recent push timestamps.
 - Target is a hackathon MVP optimized for the 1-minute demo flow.
 
 ## Highest-priority execution plan
@@ -81,7 +82,7 @@
 
 ### 7. Demo fixtures + end-to-end validation
 
-- [ ] Seed working demo repos with realistic metadata, commits, and agent-readable READMEs.
+- [x] Seed working demo repos with realistic metadata, commits, and agent-readable READMEs.
 - [ ] Add focused tests for API behavior, repo creation, auth, and search ranking.
 - [ ] Add an end-to-end demo validation path covering register/create/clone/push/metadata refresh.
 - [ ] Validate the exact filmed scenario for Slack search/clone/use/push.
@@ -95,4 +96,4 @@
 
 ## Next recommended increment
 
-- Seed the demo repos and verify `slack-notify` wins demo-critical searches.
+- Verify seeded search ranking so `slack-notify` wins the demo-critical queries.

@@ -15,6 +15,7 @@ Usage:
   lore search <query>
   lore clone <owner/repo> [path]
   lore publish [path] [--description TEXT] [--tags tag1,tag2]
+  lore push [path]
   lore whoami
 EOF
 }
@@ -366,6 +367,39 @@ publish() {
   printf 'Pushed main to %s/%s\n' "$owner" "$name"
 }
 
+push_repo() {
+  local target_path="${1:-.}"
+  local token
+  token="$(active_token)"
+  local username
+  username="$(active_username)"
+
+  if [[ -z "$token" || -z "$username" ]]; then
+    printf 'Lore config is missing LORE_TOKEN or LORE_USERNAME in %s\n' "$LORE_CONFIG_PATH" >&2
+    exit 1
+  fi
+
+  if [[ ! -d "$target_path/.git" ]]; then
+    printf 'Not a git repository: %s\n' "$target_path" >&2
+    exit 1
+  fi
+
+  local fetch_url
+  fetch_url=$(git -C "$target_path" remote get-url origin 2>/dev/null) || {
+    printf 'origin remote not found in %s\n' "$target_path" >&2
+    exit 1
+  }
+
+  local push_url
+  push_url=$(authenticated_remote_url "$username" "$token" "$fetch_url")
+  git -C "$target_path" remote set-url --push origin "$push_url"
+
+  printf 'Rebasing %s onto origin/main\n' "$target_path"
+  git -C "$target_path" pull --rebase origin main
+  printf 'Pushing %s to main\n' "$target_path"
+  git -C "$target_path" push origin HEAD:main
+}
+
 whoami() {
   local token
   token="$(active_token)"
@@ -409,6 +443,10 @@ main() {
     publish)
       shift
       publish "$@"
+      ;;
+    push)
+      shift
+      push_repo "$@"
       ;;
     whoami)
       shift

@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+PUBLIC_HOST="${PUBLIC_HOST:-lore.cto.je}"
+EXPECTED_IP="${EXPECTED_IP:-}"
+LOCAL_CHECK_URL="${LOCAL_CHECK_URL:-http://127.0.0.1/up}"
+LOCAL_HOST_HEADER="${LOCAL_HOST_HEADER:-$PUBLIC_HOST}"
+CONNECT_TIMEOUT="${CONNECT_TIMEOUT:-5}"
+MAX_TIME="${MAX_TIME:-10}"
+
+status=0
+
+print_check() {
+  local label="$1"
+  local detail="$2"
+  printf '[check] %s: %s\n' "$label" "$detail"
+}
+
+print_ok() {
+  local label="$1"
+  local detail="$2"
+  printf '[ok] %s: %s\n' "$label" "$detail"
+}
+
+print_blocker() {
+  local label="$1"
+  local detail="$2"
+  printf '[blocker] %s: %s\n' "$label" "$detail" >&2
+  status=1
+}
+
+resolved_ips=""
+if getent_output="$(getent ahostsv4 "$PUBLIC_HOST" 2>/dev/null)"; then
+  resolved_ips="$(printf '%s\n' "$getent_output" | ruby -e 'puts STDIN.read.lines.map { |line| line.split.first }.uniq')"
+fi
+
+if [[ -z "$resolved_ips" ]]; then
+  print_blocker dns "$PUBLIC_HOST does not resolve yet"
+else
+  joined_ips="$(printf '%s' "$resolved_ips" | ruby -e 'puts STDIN.read.split.join(", ")')"
+  print_ok dns "$PUBLIC_HOST resolves to $joined_ips"
+
+  if [[ -n "$EXPECTED_IP" ]]; then
+    if [[ "\n$resolved_ips\n" == *"\n$EXPECTED_IP\n"* ]]; then
+      print_ok dns-target "expected IP $EXPECTED_IP is present"
+    else
+      print_blocker dns-target "expected IP $EXPECTED_IP is missing from $joined_ips"
+    fi
+  fi
+fi
+
+print_check local-proxy "GET $LOCAL_CHECK_URL with Host: $LOCAL_HOST_HEADER"
+if local_body="$(curl -fsS --connect-timeout "$CONNECT_TIMEOUT" --max-time "$MAX_TIME" -H "Host: $LOCAL_HOST_HEADER" "$LOCAL_CHECK_URL" 2>/dev/null)"; then
+  if [[ "$local_body" == *"background-color: green"* ]]; then
+    print_ok local-proxy "local ingress responds for $LOCAL_HOST_HEADER"
+  else
+    print_blocker local-proxy "local ingress responded, but /up body did not look healthy"
+  fi
+else
+  print_blocker local-proxy "could not reach local ingress at $LOCAL_CHECK_URL"
+fi
+
+if [[ -n "$resolved_ips" ]]; then
+  https_url="https://$PUBLIC_HOST/up"
+  print_check https "$https_url"
+
+  if https_body="$(curl -fsS --connect-timeout "$CONNECT_TIMEOUT" --max-time "$MAX_TIME" "$https_url" 2>/dev/null)"; then
+    if [[ "$https_body" == *"background-color: green"* ]]; then
+      print_ok https "public HTTPS health check passed"
+    else
+      print_blocker https "HTTPS responded, but /up body did not look healthy"
+    fi
+  else
+    print_blocker https "HTTPS health check failed"
+  fi
+else
+  print_check https "skipped until DNS resolves"
+fi
+
+if [[ "$status" -eq 0 ]]; then
+  printf 'Milestone: public ingress looks ready for %s\n' "$PUBLIC_HOST"
+else
+  printf 'Blocker summary: public ingress is not fully ready for %s\n' "$PUBLIC_HOST" >&2
+fi
+
+exit "$status"

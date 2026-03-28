@@ -39,6 +39,7 @@
 - A live deployed smoke path is now scripted via `script/validate_deployed_smoke` to verify web, API, install, clone, publish, and push behavior against the VPS service.
 - Lore is now running on this VPS via `lore.service` at `http://127.0.0.1:3000`, and the deployed smoke script has passed against that live service.
 - A Caddy-based public ingress path now exists via `script/configure_public_ingress`, with local host-header validation on port `80` for the Lore service.
+- `script/check_public_ingress` now preflights the final DNS/TLS cutover by checking DNS resolution, expected IP targeting, local host-header ingress, and public HTTPS health in one place.
 - Public DNS/TLS remains the only deployment blocker: `lore.cto.je` does not currently resolve here, so real `https://lore.cto.je/up` validation still cannot pass from this VPS.
 - Target is a hackathon MVP optimized for the 1-minute demo flow.
 
@@ -106,6 +107,7 @@
 ### 8. Deployment + public ingress
 
 - [x] Add a repo-checked public ingress configuration path that can reverse-proxy the local Lore service on port `80` now and switch to managed TLS later.
+- [x] Add a repeatable preflight that distinguishes local ingress readiness from DNS/TLS cutover failures.
 - [ ] Point public DNS / ingress for `lore.cto.je` at this VPS and validate real HTTPS end to end.
 
 ## Known design constraints
@@ -116,4 +118,4 @@
 
 ## Next recommended increment
 
-- Once `lore.cto.je` resolves to this VPS, rerun `TLS_MODE=auto script/configure_public_ingress` and validate `https://lore.cto.je/up` plus `script/validate_deployed_smoke` against the public host.
+- Point `lore.cto.je` at this VPS, run `EXPECTED_IP=<this-vps-ip> script/check_public_ingress` until DNS + HTTPS both pass, then rerun `TLS_MODE=auto script/configure_public_ingress` and `LORE_HOST=https://lore.cto.je script/validate_deployed_smoke`.

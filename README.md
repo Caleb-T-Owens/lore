@@ -72,6 +72,14 @@ Run the deployed smoke test against that live service with:
 script/validate_deployed_smoke
 ```
 
+For the last-mile DNS/TLS cutover, run this preflight first:
+
+```bash
+EXPECTED_IP=<this-vps-ip> script/check_public_ingress
+```
+
+It reports whether `lore.cto.je` resolves, whether it points at the expected VPS IP, whether the local reverse proxy answers with the public host header, and whether live HTTPS is already healthy.
+
 ## Install The CLI
 
 From a running Lore server:

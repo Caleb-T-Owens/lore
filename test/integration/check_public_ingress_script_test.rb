@@ -20,6 +20,7 @@ class CheckPublicIngressScriptTest < ActiveSupport::TestCase
       "curl" => <<~SH
         #!/usr/bin/env bash
         case "$*" in
+          *"https://dns.google/resolve?name=lore.cto.je&type=A"*) printf '%s' '{"Status":3}' ;;
           *"http://127.0.0.1/up"*) printf '%s' '#{GREEN_BODY}' ;;
           *) exit 1 ;;
         esac
@@ -28,6 +29,7 @@ class CheckPublicIngressScriptTest < ActiveSupport::TestCase
       stdout, stderr, status = run_script(bin_dir)
 
       assert_not status.success?
+      assert_includes stderr, "[blocker] public-dns: lore.cto.je does not resolve publicly yet"
       assert_includes stderr, "[blocker] dns: lore.cto.je does not resolve yet"
       assert_includes stdout, "[hint] dns-target: point lore.cto.je at 203.0.113.10"
       assert_includes stdout, "[hint] expected-ip: rerun with EXPECTED_IP=203.0.113.10"
@@ -47,6 +49,7 @@ class CheckPublicIngressScriptTest < ActiveSupport::TestCase
       "curl" => <<~SH
         #!/usr/bin/env bash
         case "$*" in
+          *"https://dns.google/resolve?name=lore.cto.je&type=A"*) printf '%s' '{"Answer":[{"name":"lore.cto.je.","type":1,"data":"203.0.113.10"}]}' ;;
           *"http://127.0.0.1/up"*) printf '%s' '#{GREEN_BODY}' ;;
           *"-o /dev/null -D -"*"http://lore.cto.je/up"*) printf 'HTTP/1.1 308 Permanent Redirect\r\nLocation: https://lore.cto.je/up\r\n\r\n' ;;
           *"https://lore.cto.je/up"*) exit 1 ;;
@@ -57,6 +60,7 @@ class CheckPublicIngressScriptTest < ActiveSupport::TestCase
       stdout, stderr, status = run_script(bin_dir, "EXPECTED_IP" => "203.0.113.10")
 
       assert_not status.success?
+      assert_includes stdout, "[ok] public-dns: lore.cto.je resolves publicly to 203.0.113.10"
       assert_includes stdout, "[ok] dns: lore.cto.je resolves to 203.0.113.10"
       assert_includes stdout, "[ok] dns-target: expected IP 203.0.113.10 is present"
       assert_includes stdout, "[ok] http: public HTTP redirects to HTTPS"
@@ -78,6 +82,7 @@ class CheckPublicIngressScriptTest < ActiveSupport::TestCase
       "curl" => <<~SH
         #!/usr/bin/env bash
         case "$*" in
+          *"https://dns.google/resolve?name=lore.cto.je&type=A"*) printf '%s' '{"Status":3}' ;;
           *"-o /dev/null -D -"*"http://127.0.0.1/up"*) printf 'HTTP/1.1 308 Permanent Redirect\r\nLocation: https://lore.cto.je/up\r\n\r\n' ;;
           *"http://127.0.0.1/up"*) printf 'redirecting to https' ;;
           *) exit 1 ;;
@@ -87,6 +92,7 @@ class CheckPublicIngressScriptTest < ActiveSupport::TestCase
       stdout, stderr, status = run_script(bin_dir)
 
       assert_not status.success?
+      assert_includes stderr, "[blocker] public-dns: lore.cto.je does not resolve publicly yet"
       assert_includes stderr, "[blocker] dns: lore.cto.je does not resolve yet"
       assert_includes stdout, "[ok] local-proxy: local ingress redirects HTTP to HTTPS for lore.cto.je"
       assert_includes stderr, "Blocker summary: public ingress is not fully ready for lore.cto.je"
@@ -102,6 +108,7 @@ class CheckPublicIngressScriptTest < ActiveSupport::TestCase
       "curl" => <<~SH
         #!/usr/bin/env bash
         case "$*" in
+          *"https://dns.google/resolve?name=lore.cto.je&type=A"*) printf '%s' '{"Answer":[{"name":"lore.cto.je.","type":1,"data":"198.51.100.8"}]}' ;;
           *"http://127.0.0.1/up"*) printf '%s' '#{GREEN_BODY}' ;;
           *"-o /dev/null -D -"*"http://lore.cto.je/up"*) printf 'HTTP/1.1 308 Permanent Redirect\r\nLocation: https://lore.cto.je/up\r\n\r\n' ;;
           *"https://lore.cto.je/up"*) printf '%s' '#{GREEN_BODY}' ;;
@@ -112,11 +119,41 @@ class CheckPublicIngressScriptTest < ActiveSupport::TestCase
       stdout, stderr, status = run_script(bin_dir, "EXPECTED_IP" => "203.0.113.10")
 
       assert_not status.success?
+      assert_includes stdout, "[ok] public-dns: lore.cto.je resolves publicly to 198.51.100.8"
       assert_includes stdout, "[ok] dns: lore.cto.je resolves to 198.51.100.8"
-      assert_includes stderr, "[blocker] dns-target: expected IP 203.0.113.10 is missing from 198.51.100.8"
+      assert_includes stderr, "[blocker] dns-target: expected IP 203.0.113.10 is missing from public DNS results (198.51.100.8)"
       assert_includes stdout, "[ok] http: public HTTP redirects to HTTPS"
       assert_includes stdout, "[ok] https: public HTTPS health check passed"
       assert_includes stderr, "Blocker summary: public ingress is not fully ready for lore.cto.je"
+    end
+  end
+
+  test "warns when local resolver lags behind public dns" do
+    with_fake_commands(
+      "getent" => <<~SH,
+        #!/usr/bin/env bash
+        printf '198.51.100.8 STREAM lore.cto.je\n198.51.100.8 DGRAM lore.cto.je\n'
+      SH
+      "curl" => <<~SH
+        #!/usr/bin/env bash
+        case "$*" in
+          *"https://dns.google/resolve?name=lore.cto.je&type=A"*) printf '%s' '{"Answer":[{"name":"lore.cto.je.","type":1,"data":"203.0.113.10"}]}' ;;
+          *"http://127.0.0.1/up"*) printf '%s' '#{GREEN_BODY}' ;;
+          *"-o /dev/null -D -"*"http://lore.cto.je/up"*) printf 'HTTP/1.1 308 Permanent Redirect\r\nLocation: https://lore.cto.je/up\r\n\r\n' ;;
+          *"https://lore.cto.je/up"*) printf '%s' '#{GREEN_BODY}' ;;
+          *) exit 1 ;;
+        esac
+      SH
+    ) do |bin_dir|
+      stdout, stderr, status = run_script(bin_dir, "EXPECTED_IP" => "203.0.113.10")
+
+      assert status.success?
+      assert_includes stdout, "[ok] public-dns: lore.cto.je resolves publicly to 203.0.113.10"
+      assert_includes stdout, "[ok] dns: lore.cto.je resolves to 198.51.100.8"
+      assert_includes stdout, "[hint] dns-cache: local resolver differs from public DNS (203.0.113.10); recheck after propagation"
+      assert_includes stdout, "[ok] dns-target: expected IP 203.0.113.10 is present"
+      assert_includes stdout, "Milestone: public ingress looks ready for lore.cto.je"
+      assert_empty stderr
     end
   end
 

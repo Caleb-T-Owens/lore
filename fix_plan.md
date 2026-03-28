@@ -46,6 +46,7 @@
 - `script/check_public_ingress` now also auto-suggests the preferred VPS IP for the pending DNS cutover and has focused automated coverage, so the last-mile blocker is clearer and repeatable to validate.
 - `script/check_public_ingress` now distinguishes public HTTP readiness from final HTTPS issuance, making DNS-cutover troubleshooting more actionable once `lore.cto.je` starts resolving.
 - Public ingress on this VPS is now staged in Caddy `TLS_MODE=auto`, and the preflight accepts the expected local HTTP->HTTPS redirect instead of misreporting it as unhealthy.
+- `script/check_public_ingress` now also checks public DNS via DNS-over-HTTPS, so it can distinguish true public-DNS absence from local resolver lag during the final cutover.
 - Public DNS/TLS remains the only deployment blocker: `lore.cto.je` does not currently resolve here, so real `https://lore.cto.je/up` validation still cannot pass from this VPS.
 - Target is a hackathon MVP optimized for the 1-minute demo flow.
 
@@ -121,6 +122,8 @@
 - [x] Add a repo-checked public ingress configuration path that can reverse-proxy the local Lore service on port `80` now and switch to managed TLS later.
 - [x] Add a repeatable preflight that distinguishes local ingress readiness from DNS/TLS cutover failures.
 - [ ] Point public DNS / ingress for `lore.cto.je` at this VPS and validate real HTTPS end to end.
+
+Current blocker on the remaining item: both the local resolver and a public DNS-over-HTTPS lookup still return no A record for `lore.cto.je`, while local Lore+Caddy health is green and the preferred VPS target remains `116.202.10.147`.
 
 ## Known design constraints
 

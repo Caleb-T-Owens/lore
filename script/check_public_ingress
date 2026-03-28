@@ -68,6 +68,17 @@ resolve_ipv4s() {
   ruby -rresolv -e 'puts Resolv.getaddresses(ARGV.fetch(0)).grep(/\A\d+\.\d+\.\d+\.\d+\z/).uniq' "$PUBLIC_HOST" 2>/dev/null || true
 }
 
+resolve_public_ipv4s() {
+  public_dns_url="https://dns.google/resolve?name=${PUBLIC_HOST}&type=A"
+
+  curl -fsS --connect-timeout "$CONNECT_TIMEOUT" --max-time "$MAX_TIME" "$public_dns_url" 2>/dev/null |
+    ruby -rjson -e '
+      payload = JSON.parse(STDIN.read)
+      answers = Array(payload["Answer"])
+      puts answers.filter_map { |answer| answer["data"] if answer["type"] == 1 }.uniq
+    ' 2>/dev/null || true
+}
+
 local_ipv4_candidates() {
   if command -v ip >/dev/null 2>&1; then
     if ip_output="$(ip -4 -o addr show scope global 2>/dev/null)" && [[ -n "$ip_output" ]]; then
@@ -83,7 +94,15 @@ local_ipv4_candidates() {
 
 resolved_ips=""
 resolved_ips="$(resolve_ipv4s)"
+public_resolved_ips="$(resolve_public_ipv4s)"
 candidate_ips="$(local_ipv4_candidates)"
+
+if [[ -n "$public_resolved_ips" ]]; then
+  joined_public_ips="$(printf '%s' "$public_resolved_ips" | join_csv)"
+  print_ok public-dns "$PUBLIC_HOST resolves publicly to $joined_public_ips"
+else
+  print_blocker public-dns "$PUBLIC_HOST does not resolve publicly yet"
+fi
 
 if [[ -z "$resolved_ips" ]]; then
   print_blocker dns "$PUBLIC_HOST does not resolve yet"
@@ -103,11 +122,25 @@ else
   joined_ips="$(printf '%s' "$resolved_ips" | join_csv)"
   print_ok dns "$PUBLIC_HOST resolves to $joined_ips"
 
+  if [[ -n "$public_resolved_ips" ]] && [[ "$public_resolved_ips" != "$resolved_ips" ]]; then
+    joined_public_ips="$(printf '%s' "$public_resolved_ips" | join_csv)"
+    print_hint dns-cache "local resolver differs from public DNS ($joined_public_ips); recheck after propagation"
+  fi
+
   if [[ -n "$EXPECTED_IP" ]]; then
-    if [[ "\n$resolved_ips\n" == *"\n$EXPECTED_IP\n"* ]]; then
+    target_ips="$public_resolved_ips"
+    target_label="public DNS"
+
+    if [[ -z "$target_ips" ]]; then
+      target_ips="$resolved_ips"
+      target_label="local DNS"
+    fi
+
+    if [[ "\n$target_ips\n" == *"\n$EXPECTED_IP\n"* ]]; then
       print_ok dns-target "expected IP $EXPECTED_IP is present"
     else
-      print_blocker dns-target "expected IP $EXPECTED_IP is missing from $joined_ips"
+      joined_target_ips="$(printf '%s' "$target_ips" | join_csv)"
+      print_blocker dns-target "expected IP $EXPECTED_IP is missing from $target_label results ($joined_target_ips)"
     fi
   elif [[ -n "$candidate_ips" ]]; then
     joined_candidates="$(printf '%s' "$candidate_ips" | join_csv)"

@@ -30,6 +30,7 @@
 - `/install.sh` now serves a real shell installer that writes the Lore CLI into `~/.local/bin` for onboarding.
 - End-to-end validation now covers register -> publish -> clone -> push -> metadata refresh across the CLI, API, forge, and repo page.
 - `README.md` now documents setup, running, seeding, CLI install, and the highest-signal demo validation commands.
+- A separate agent has now executed the Slack demo story against a live test server and confirmed search -> clone -> use -> improve -> push works end to end.
 - Target is a hackathon MVP optimized for the 1-minute demo flow.
 
 ## Highest-priority execution plan
@@ -91,7 +92,7 @@
 - [x] Add focused tests for API behavior, repo creation, auth, and search ranking.
 - [x] Add an end-to-end demo validation path covering register/create/clone/push/metadata refresh.
 - [x] Validate the exact filmed scenario for Slack search/clone/use/push.
-- [ ] As the very last major item, add agent-driven integration tests based on step-by-step user stories: hand the story to another agent, let it interact with the APIs/web UI/CLI, and assert the required outcome happened.
+- [x] As the very last major item, add agent-driven integration tests based on step-by-step user stories: hand the story to another agent, let it interact with the APIs/web UI/CLI, and assert the required outcome happened.
 
 ## Known design constraints
 
@@ -101,4 +102,4 @@
 
 ## Next recommended increment
 
-- As the very last major item, add an agent-driven integration test based on a step-by-step user story.
+- No remaining MVP items.

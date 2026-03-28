@@ -18,6 +18,22 @@ module Api
       render json: { repo: serialize_repo(repo) }
     end
 
+    def search
+      query = params[:q].to_s.strip
+      return render json: { error: "q is required" }, status: :bad_request if query.blank?
+
+      results = Lore::RepoSearch.search(query)
+
+      render json: {
+        query: query,
+        repos: results.map do |result|
+          serialize_repo(result.repo).merge(similarity_score: result.score.round(4))
+        end
+      }
+    rescue Lore::Embeddings::Error => error
+      render json: { error: error.message }, status: :service_unavailable
+    end
+
     def star
       Star.find_or_create_by!(user: current_api_user, repo: repo)
 

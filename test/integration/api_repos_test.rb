@@ -78,6 +78,47 @@ class ApiReposTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
+  test "searches repos by similarity score" do
+    Repo.create!(
+      owner: @user,
+      name: "slack-notify",
+      description: "Posts to Slack",
+      tags: ["slack", "notifications"],
+      path: File.join(@repo_root, "hazel", "slack-notify.git"),
+      embedding: [1.0, 0.0]
+    )
+    Repo.create!(
+      owner: @user,
+      name: "send-email",
+      description: "Sends email",
+      tags: ["email"],
+      path: File.join(@repo_root, "hazel", "send-email.git"),
+      embedding: [0.0, 1.0]
+    )
+
+    with_stubbed_embedding([1.0, 0.0]) do
+      get api_search_repos_path, params: { q: "send slack notification" }
+    end
+
+    assert_response :success
+    assert_equal "slack-notify", response.parsed_body.fetch("repos").first.fetch("name")
+    assert_equal 1.0, response.parsed_body.fetch("repos").first.fetch("similarity_score")
+  end
+
+  test "requires a query for repo search" do
+    get api_search_repos_path, params: { q: "   " }
+
+    assert_response :bad_request
+  end
+
+  test "returns service unavailable when embeddings cannot be generated" do
+    with_stubbed_embedding_error("OPENAI_API_KEY is not configured") do
+      get api_search_repos_path, params: { q: "send slack notification" }
+    end
+
+    assert_response :service_unavailable
+  end
+
   test "stars a repo idempotently for the authenticated user" do
     repo = Repo.create!(
       owner: @user,
@@ -166,5 +207,23 @@ class ApiReposTest < ActionDispatch::IntegrationTest
     errors = response.parsed_body.fetch("errors")
     assert_includes errors.fetch("name"), "Name is invalid"
     assert_includes errors.fetch("description"), "Description can't be blank"
+  end
+
+  private
+
+  def with_stubbed_embedding(result)
+    original = Lore::Embeddings.method(:embed)
+    Lore::Embeddings.singleton_class.define_method(:embed) { |_query| result }
+    yield
+  ensure
+    Lore::Embeddings.singleton_class.define_method(:embed, original)
+  end
+
+  def with_stubbed_embedding_error(message)
+    original = Lore::Embeddings.method(:embed)
+    Lore::Embeddings.singleton_class.define_method(:embed) { |_query| raise Lore::Embeddings::Error, message }
+    yield
+  ensure
+    Lore::Embeddings.singleton_class.define_method(:embed, original)
   end
 end

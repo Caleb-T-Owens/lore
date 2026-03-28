@@ -3,6 +3,7 @@ Rails.application.routes.draw do
     resources :repos, only: :create
     resources :users, only: :create
 
+    get "repos/search", to: "repos#search", as: :search_repos
     get "repos/:owner/:name", to: "repos#show", as: :repo
     post "repos/:owner/:name/star", to: "repos#star", as: :star_repo
     delete "repos/:owner/:name/star", to: "repos#unstar"

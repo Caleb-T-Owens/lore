@@ -8,6 +8,17 @@ module Lore
 
     ENDPOINT = URI("https://api.openai.com/v1/embeddings")
     MODEL = "text-embedding-3-small"
+    TEST_KEYWORD_GROUPS = [
+      %w[slack webhook message messages notify notification notifications emoji post posts],
+      %w[email smtp sendgrid mail inbox],
+      %w[http https url fetch request response web],
+      %w[json parse parser parsing key path keys data],
+      %w[git commit commits history summary summarize summarise repo repository branch],
+      %w[agent tool skill script automation],
+      %w[deploy deployment finished release],
+      %w[text stdout output body]
+    ].freeze
+    TEST_HASH_DIMENSIONS = 8
 
     module_function
 
@@ -31,9 +42,24 @@ module Lore
     end
 
     def deterministic_test_embedding(text)
-      Digest::SHA256.digest(text.to_s).bytes.each_slice(4).map do |chunk|
-        integer = chunk.reduce(0) { |value, byte| (value << 8) + byte }
-        (integer / 2_147_483_647.0).round(6)
+      tokens = normalized_tokens(text)
+      keyword_features = TEST_KEYWORD_GROUPS.map do |group|
+        tokens.count { |token| group.include?(token) }.to_f
+      end
+
+      hash_features = Array.new(TEST_HASH_DIMENSIONS, 0.0)
+      tokens.each do |token|
+        bucket = Digest::SHA256.hexdigest(token).to_i(16) % TEST_HASH_DIMENSIONS
+        hash_features[bucket] += 1.0
+      end
+
+      keyword_features + hash_features
+    end
+
+    def normalized_tokens(text)
+      text.to_s.downcase.scan(/[a-z0-9]+/).flat_map do |token|
+        stripped = token.end_with?("s") && token.length > 3 ? token.delete_suffix("s") : token
+        stripped == token ? [token] : [token, stripped]
       end
     end
   end

@@ -1,6 +1,5 @@
 require "test_helper"
 require "open3"
-require "socket"
 require "tmpdir"
 
 class LoreCliSearchTest < ActiveSupport::TestCase
@@ -33,7 +32,7 @@ class LoreCliSearchTest < ActiveSupport::TestCase
     )
     Star.create!(user: User.create!(username: "agent"), repo: Repo.find_by!(name: "slack-notify"))
 
-    with_server do |base_url|
+    with_lore_test_server(log_name: "lore-cli-search-server.log") do |base_url|
       Dir.mktmpdir("lore-cli-home") do |home|
         stdout, stderr, status = Open3.capture3(
           { "HOME" => home, "LORE_HOST" => base_url },
@@ -47,50 +46,5 @@ class LoreCliSearchTest < ActiveSupport::TestCase
         assert_operator stdout.index("hazel/slack-notify"), :<, stdout.index("hazel/send-email")
       end
     end
-  end
-
-  private
-
-  def with_server
-    port = pick_port
-    log_path = Rails.root.join("tmp", "lore-cli-search-server.log")
-    log_file = File.open(log_path, "w")
-    pid = Process.spawn(
-      { "RAILS_ENV" => "test" },
-      "bin/rails", "server", "-p", port.to_s,
-      chdir: Rails.root.to_s,
-      out: log_file,
-      err: log_file
-    )
-
-    wait_for_server!(port)
-    yield "http://127.0.0.1:#{port}"
-  ensure
-    begin
-      Process.kill("TERM", pid) if pid
-      Process.wait(pid) if pid
-    rescue Errno::ESRCH, Errno::ECHILD
-      nil
-    end
-    log_file&.close
-  end
-
-  def pick_port
-    server = TCPServer.new("127.0.0.1", 0)
-    server.addr[1]
-  ensure
-    server&.close
-  end
-
-  def wait_for_server!(port)
-    60.times do
-      socket = TCPSocket.new("127.0.0.1", port)
-      socket.close
-      return
-    rescue Errno::ECONNREFUSED
-      sleep 0.25
-    end
-
-    flunk "Timed out waiting for Rails server on port #{port}"
   end
 end

@@ -4,7 +4,6 @@ require "json"
 require "net/http"
 require "open3"
 require "securerandom"
-require "socket"
 require "tmpdir"
 
 class GitTransportEndToEndTest < ActiveSupport::TestCase
@@ -20,7 +19,7 @@ class GitTransportEndToEndTest < ActiveSupport::TestCase
   test "supports anonymous clone and fetch plus authenticated fast-forward-only pushes" do
     suffix = SecureRandom.hex(4)
 
-    with_server do |base_url|
+    with_lore_test_server(log_name: "git-transport-server.log") do |base_url|
       owner = register_user(base_url, "owner#{suffix}")
       contributor = register_user(base_url, "agent#{suffix}")
       @owner_username = owner.dig("user", "username")
@@ -65,49 +64,6 @@ class GitTransportEndToEndTest < ActiveSupport::TestCase
   end
 
   private
-
-  def with_server
-    port = pick_port
-    log_path = Rails.root.join("tmp", "git-transport-server.log")
-    log_file = File.open(log_path, "w")
-    pid = Process.spawn(
-      { "RAILS_ENV" => "test" },
-      "bin/rails", "server", "-p", port.to_s,
-      chdir: Rails.root.to_s,
-      out: log_file,
-      err: log_file
-    )
-
-    wait_for_server!(port)
-    yield "http://127.0.0.1:#{port}"
-  ensure
-    begin
-      Process.kill("TERM", pid) if pid
-      Process.wait(pid) if pid
-    rescue Errno::ESRCH, Errno::ECHILD
-      nil
-    end
-    log_file&.close
-  end
-
-  def pick_port
-    server = TCPServer.new("127.0.0.1", 0)
-    server.addr[1]
-  ensure
-    server&.close
-  end
-
-  def wait_for_server!(port)
-    60.times do
-      socket = TCPSocket.new("127.0.0.1", port)
-      socket.close
-      return
-    rescue Errno::ECONNREFUSED
-      sleep 0.25
-    end
-
-    flunk "Timed out waiting for Rails server on port #{port}"
-  end
 
   def register_user(base_url, username)
     post_json("#{base_url}/api/users", { username: username })

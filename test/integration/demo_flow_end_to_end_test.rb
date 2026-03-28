@@ -1,7 +1,8 @@
 require "test_helper"
 require "fileutils"
+require "json"
+require "net/http"
 require "open3"
-require "socket"
 require "tmpdir"
 
 class DemoFlowEndToEndTest < ActionDispatch::IntegrationTest
@@ -15,7 +16,7 @@ class DemoFlowEndToEndTest < ActionDispatch::IntegrationTest
   end
 
   test "register publish clone push and metadata refresh work together" do
-    with_server do |base_url|
+    with_lore_test_server(log_name: "demo-flow-server.log", host_override: true) do |base_url|
       Dir.mktmpdir("lore-e2e-home") do |home|
         git_config = File.join(home, ".gitconfig")
 
@@ -51,17 +52,15 @@ class DemoFlowEndToEndTest < ActionDispatch::IntegrationTest
           assert_predicate repo.last_pushed_at, :present?
           assert_equal 1, repo.stars.count
 
-          get "/api/repos/hazel/deploy-helper"
-          assert_response :success
-          assert_equal base_url + "/git/hazel/deploy-helper.git", response.parsed_body.dig("repo", "clone_url")
-          assert_equal 1, response.parsed_body.dig("repo", "stars")
-          assert_not_nil response.parsed_body.dig("repo", "last_pushed_at")
+          repo_payload = get_json!("#{base_url}/api/repos/hazel/deploy-helper").fetch("repo")
+          assert_equal base_url + "/git/hazel/deploy-helper.git", repo_payload.fetch("clone_url")
+          assert_equal 1, repo_payload.fetch("stars")
+          assert_not_nil repo_payload.fetch("last_pushed_at")
 
-          get "/hazel/deploy-helper"
-          assert_response :success
-          assert_includes response.body, "hazel/deploy-helper"
-          assert_includes response.body, repo.clone_url
-          assert_includes response.body, "# Deploy Helper"
+          repo_page = get_text!("#{base_url}/hazel/deploy-helper")
+          assert_includes repo_page, "hazel/deploy-helper"
+          assert_includes repo_page, repo.clone_url
+          assert_includes repo_page, "# Deploy Helper"
         end
       end
     end
@@ -100,50 +99,18 @@ class DemoFlowEndToEndTest < ActionDispatch::IntegrationTest
     [stdout, stderr, status]
   end
 
-  def with_server
-    port = pick_port
-    base_url = "http://127.0.0.1:#{port}"
-    original_host = Lore::Application.config.x.lore.host
-    Lore::Application.config.x.lore.host = base_url
-    log_path = Rails.root.join("tmp", "demo-flow-server.log")
-    log_file = File.open(log_path, "w")
-    pid = Process.spawn(
-      { "RAILS_ENV" => "test", "LORE_HOST" => base_url },
-      "bin/rails", "server", "-p", port.to_s,
-      chdir: Rails.root.to_s,
-      out: log_file,
-      err: log_file
-    )
+  def get_json!(url)
+    response = Net::HTTP.get_response(URI(url))
+    assert response.is_a?(Net::HTTPSuccess), "Expected success from #{url}, got #{response.code}: #{response.body}"
 
-    wait_for_server!(port)
-    yield base_url
-  ensure
-    begin
-      Process.kill("TERM", pid) if pid
-      Process.wait(pid) if pid
-    rescue Errno::ESRCH, Errno::ECHILD
-      nil
-    end
-    log_file&.close
-    Lore::Application.config.x.lore.host = original_host
+    JSON.parse(response.body)
   end
 
-  def pick_port
-    server = TCPServer.new("127.0.0.1", 0)
-    server.addr[1]
-  ensure
-    server&.close
+  def get_text!(url)
+    response = Net::HTTP.get_response(URI(url))
+    assert response.is_a?(Net::HTTPSuccess), "Expected success from #{url}, got #{response.code}: #{response.body}"
+
+    response.body
   end
 
-  def wait_for_server!(port)
-    60.times do
-      socket = TCPSocket.new("127.0.0.1", port)
-      socket.close
-      return
-    rescue Errno::ECONNREFUSED
-      sleep 0.25
-    end
-
-    flunk "Timed out waiting for Rails server on port #{port}"
-  end
 end

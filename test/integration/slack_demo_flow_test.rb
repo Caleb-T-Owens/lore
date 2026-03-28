@@ -2,7 +2,6 @@ require "test_helper"
 require "fileutils"
 require "json"
 require "open3"
-require "socket"
 require "tmpdir"
 
 class SlackDemoFlowTest < ActionDispatch::IntegrationTest
@@ -18,7 +17,7 @@ class SlackDemoFlowTest < ActionDispatch::IntegrationTest
   test "the slack demo flow can search clone use and push an emoji improvement" do
     Rails.application.load_seed
 
-    with_server do |base_url|
+    with_lore_test_server(log_name: "slack-demo-server.log", host_override: true) do |base_url|
       Dir.mktmpdir("lore-slack-demo-home") do |home|
         git_config = File.join(home, ".gitconfig")
         clone_path = nil
@@ -121,50 +120,4 @@ class SlackDemoFlowTest < ActionDispatch::IntegrationTest
     server&.close unless server&.closed?
   end
 
-  def with_server
-    port = pick_port
-    base_url = "http://127.0.0.1:#{port}"
-    original_host = Lore::Application.config.x.lore.host
-    Lore::Application.config.x.lore.host = base_url
-    log_path = Rails.root.join("tmp", "slack-demo-server.log")
-    log_file = File.open(log_path, "w")
-    pid = Process.spawn(
-      { "RAILS_ENV" => "test", "LORE_HOST" => base_url },
-      "bin/rails", "server", "-p", port.to_s,
-      chdir: Rails.root.to_s,
-      out: log_file,
-      err: log_file
-    )
-
-    wait_for_server!(port)
-    yield base_url
-  ensure
-    begin
-      Process.kill("TERM", pid) if pid
-      Process.wait(pid) if pid
-    rescue Errno::ESRCH, Errno::ECHILD
-      nil
-    end
-    log_file&.close
-    Lore::Application.config.x.lore.host = original_host if defined?(original_host)
-  end
-
-  def pick_port
-    server = TCPServer.new("127.0.0.1", 0)
-    server.addr[1]
-  ensure
-    server&.close
-  end
-
-  def wait_for_server!(port)
-    60.times do
-      socket = TCPSocket.new("127.0.0.1", port)
-      socket.close
-      return
-    rescue Errno::ECONNREFUSED
-      sleep 0.25
-    end
-
-    flunk "Timed out waiting for Rails server on port #{port}"
-  end
 end

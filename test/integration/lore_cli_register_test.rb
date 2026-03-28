@@ -1,7 +1,6 @@
 require "test_helper"
 require "json"
 require "open3"
-require "socket"
 require "tmpdir"
 
 class LoreCliRegisterTest < ActiveSupport::TestCase
@@ -12,7 +11,7 @@ class LoreCliRegisterTest < ActiveSupport::TestCase
   end
 
   test "register saves config, installs the skill, and sets git identity" do
-    with_server do |base_url|
+    with_lore_test_server(log_name: "lore-cli-server.log") do |base_url|
       Dir.mktmpdir("lore-cli-home") do |home|
         git_config = File.join(home, ".gitconfig")
         stdout, stderr, status = Open3.capture3(
@@ -43,49 +42,6 @@ class LoreCliRegisterTest < ActiveSupport::TestCase
   end
 
   private
-
-  def with_server
-    port = pick_port
-    log_path = Rails.root.join("tmp", "lore-cli-server.log")
-    log_file = File.open(log_path, "w")
-    pid = Process.spawn(
-      { "RAILS_ENV" => "test" },
-      "bin/rails", "server", "-p", port.to_s,
-      chdir: Rails.root.to_s,
-      out: log_file,
-      err: log_file
-    )
-
-    wait_for_server!(port)
-    yield "http://127.0.0.1:#{port}"
-  ensure
-    begin
-      Process.kill("TERM", pid) if pid
-      Process.wait(pid) if pid
-    rescue Errno::ESRCH, Errno::ECHILD
-      nil
-    end
-    log_file&.close
-  end
-
-  def pick_port
-    server = TCPServer.new("127.0.0.1", 0)
-    server.addr[1]
-  ensure
-    server&.close
-  end
-
-  def wait_for_server!(port)
-    60.times do
-      socket = TCPSocket.new("127.0.0.1", port)
-      socket.close
-      return
-    rescue Errno::ECONNREFUSED
-      sleep 0.25
-    end
-
-    flunk "Timed out waiting for Rails server on port #{port}"
-  end
 
   def git_config_value(path, key)
     stdout, stderr, status = Open3.capture3("git", "config", "--file", path, "--get", key)

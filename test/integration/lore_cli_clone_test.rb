@@ -1,7 +1,6 @@
 require "test_helper"
 require "fileutils"
 require "open3"
-require "socket"
 require "tmpdir"
 
 class LoreCliCloneTest < ActiveSupport::TestCase
@@ -27,11 +26,11 @@ class LoreCliCloneTest < ActiveSupport::TestCase
     )
     seed_repo(repo.path, "# Slack Notify\n")
 
-    with_server do |base_url|
+    with_lore_test_server(log_name: "lore-cli-clone-server.log") do |base_url|
       Dir.mktmpdir("lore-cli-home") do |home|
         Dir.mktmpdir("lore-cli-clone") do |dir|
           clone_path = File.join(dir, "slack-notify")
-          write_config(home, base_url, contributor)
+          write_lore_cli_config(home, base_url, contributor)
 
           stdout, stderr, status = Open3.capture3(
             { "HOME" => home },
@@ -51,16 +50,6 @@ class LoreCliCloneTest < ActiveSupport::TestCase
 
   private
 
-  def write_config(home, base_url, user)
-    config_dir = File.join(home, ".lore")
-    FileUtils.mkdir_p(config_dir)
-    File.write(File.join(config_dir, "config"), <<~CONFIG)
-      LORE_TOKEN=#{user.plain_pat}
-      LORE_HOST=#{base_url}
-      LORE_USERNAME=#{user.username}
-    CONFIG
-  end
-
   def seed_repo(repo_path, readme_content)
     Dir.mktmpdir("lore-cli-seed") do |worktree|
       system("git", "init", "--initial-branch=main", worktree, exception: true)
@@ -74,46 +63,4 @@ class LoreCliCloneTest < ActiveSupport::TestCase
     end
   end
 
-  def with_server
-    port = pick_port
-    log_path = Rails.root.join("tmp", "lore-cli-clone-server.log")
-    log_file = File.open(log_path, "w")
-    pid = Process.spawn(
-      { "RAILS_ENV" => "test" },
-      "bin/rails", "server", "-p", port.to_s,
-      chdir: Rails.root.to_s,
-      out: log_file,
-      err: log_file
-    )
-
-    wait_for_server!(port)
-    yield "http://127.0.0.1:#{port}"
-  ensure
-    begin
-      Process.kill("TERM", pid) if pid
-      Process.wait(pid) if pid
-    rescue Errno::ESRCH, Errno::ECHILD
-      nil
-    end
-    log_file&.close
-  end
-
-  def pick_port
-    server = TCPServer.new("127.0.0.1", 0)
-    server.addr[1]
-  ensure
-    server&.close
-  end
-
-  def wait_for_server!(port)
-    60.times do
-      socket = TCPSocket.new("127.0.0.1", port)
-      socket.close
-      return
-    rescue Errno::ECONNREFUSED
-      sleep 0.25
-    end
-
-    flunk "Timed out waiting for Rails server on port #{port}"
-  end
 end

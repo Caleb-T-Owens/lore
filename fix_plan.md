@@ -32,6 +32,7 @@
 - `README.md` now documents setup, running, seeding, CLI install, and the highest-signal demo validation commands.
 - A separate agent has now executed the Slack demo story against a live test server and confirmed search -> clone -> use -> improve -> push works end to end.
 - The full Rails test suite now passes reliably in serial mode, after stabilizing CLI/server integration tests around shared SQLite and git repo fixtures.
+- Shared Lore test helpers now centralize ephemeral Rails server bootstrapping and CLI config setup, reducing duplication across the highest-signal integration tests.
 - VPS deployment plumbing now exists via `script/deploy_vps`, `script/run_deployed_server`, and a checked-in `systemd` unit template for a stable localhost demo service.
 - A live deployed smoke path is now scripted via `script/validate_deployed_smoke` to verify web, API, install, clone, publish, and push behavior against the VPS service.
 - Lore is now running on this VPS via `lore.service` at `http://127.0.0.1:3000`, and the deployed smoke script has passed against that live service.
